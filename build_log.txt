@@ -1,0 +1,91 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Builds/MacOSX/AudioSynthesiserDemo.xcodeproj -scheme "AudioSynthesiserDemo - App" -configuration Debug CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO build
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = 
+    CODE_SIGNING_REQUIRED = NO
+
+2025-12-03 18:34:00.093 xcodebuild[32621:1885126] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00006030-0018395A0150001C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00006030-0018395A0150001C, name:My Mac }
+{ platform:macOS, name:Any Mac }
+note: Using codesigning identity override: 
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'AudioSynthesiserDemo - App' in project 'AudioSynthesiserDemo' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -x c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -x objective-c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 03b3c524c1258d26b7247fcc1c76a097
+Build description path: /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/XCBuildData/03b3c524c1258d26b7247fcc1c76a097.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk /Users/muammereren/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/macosx26.1-25B74-3ae1261907bdadc328169391a47051a6.sdkstatcache
+    cd /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Builds/MacOSX/AudioSynthesiserDemo.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -o /Users/muammereren/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/macosx26.1-25B74-3ae1261907bdadc328169391a47051a6.sdkstatcache
+
+CompileC /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/Main.o /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'AudioSynthesiserDemo - App' from project 'AudioSynthesiserDemo')
+    cd /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Builds/MacOSX
+    
+    Using response file: /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo - App.build/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/muammereren/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/macosx26.1-25B74-3ae1261907bdadc328169391a47051a6.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wunreachable-code -Wnon-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wunused-function -Wno-unused-label -Wno-unused-parameter -Wunused-variable -Wunused-value -Wempty-body -Wuninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wconstant-conversion -Wint-conversion -Wbool-conversion -Wenum-conversion -Wno-float-conversion -Wnon-literal-null-conversion -Wobjc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Winfinite-recursion -Wmove -Wcomma -Wblock-capture-autoreleasing -Wstrict-prototypes -Wrange-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Index.noindex/DataStore -Wreorder @/Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/Main.d --serialize-diagnostics /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/Main.dia -c /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp -o /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/Main.o -index-unit-output-path /AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/Main.o
+In file included from /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp:10:
+/Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/AudioSynthesiserDemo.h:366:67: error: no member named 'backgroundColourId' in 'juce::AudioVisualiserComponent'
+  366 |         liveAudioDisplayComp.setColour (AudioVisualiserComponent::backgroundColourId, Colour (0xff101010));
+      |                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+/Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/AudioSynthesiserDemo.h:367:67: error: no member named 'waveformColourId' in 'juce::AudioVisualiserComponent'
+  367 |         liveAudioDisplayComp.setColour (AudioVisualiserComponent::waveformColourId, Colour (0xff00f0ff));
+      |                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+/Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/AudioSynthesiserDemo.h:400:20: warning: 'Font' is deprecated: Use the constructor that takes a FontOptions argument [-Wdeprecated-declarations]
+  400 |         g.setFont (Font (28.0f, Font::bold));
+      |                    ^
+In file included from /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp:9:
+In file included from /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/JuceLibraryCode/JuceHeader.h:17:
+In file included from /Users/muammereren/JUCE/modules/juce_audio_devices/juce_audio_devices.h:71:
+In file included from /Users/muammereren/JUCE/modules/juce_graphics/juce_graphics.h:141:
+/Users/muammereren/JUCE/modules/juce_graphics/fonts/juce_Font.h:76:7: note: 'Font' has been explicitly marked deprecated here
+   76 |     [[deprecated ("Use the constructor that takes a FontOptions argument")]]
+      |       ^
+In file included from /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp:10:
+/Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/AudioSynthesiserDemo.h:400:20: warning: 'Font' is deprecated: Use the constructor that takes a FontOptions argument [-Wdeprecated-declarations]
+  400 |         g.setFont (Font (28.0f, Font::bold));
+      |                    ^
+In file included from /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp:9:
+In file included from /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/JuceLibraryCode/JuceHeader.h:17:
+In file included from /Users/muammereren/JUCE/modules/juce_audio_devices/juce_audio_devices.h:71:
+In file included from /Users/muammereren/JUCE/modules/juce_graphics/juce_graphics.h:141:
+/Users/muammereren/JUCE/modules/juce_graphics/fonts/juce_Font.h:76:7: note: 'Font' has been explicitly marked deprecated here
+   76 |     [[deprecated ("Use the constructor that takes a FontOptions argument")]]
+      |       ^
+2 warnings and 2 errors generated.
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	CompileC /Users/muammereren/Library/Developer/Xcode/DerivedData/AudioSynthesiserDemo-chgpuwjjasstqkfzugqewtgfjbml/Build/Intermediates.noindex/AudioSynthesiserDemo.build/Debug/AudioSynthesiserDemo\ -\ App.build/Objects-normal/arm64/Main.o /Users/muammereren/Desktop/audiosofts/AudioSynthesiserDemo/Source/Main.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'AudioSynthesiserDemo - App' from project 'AudioSynthesiserDemo')
+	Building project AudioSynthesiserDemo with scheme AudioSynthesiserDemo - App and configuration Debug
+(2 failures)
