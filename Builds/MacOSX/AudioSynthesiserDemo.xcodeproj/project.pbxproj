@@ -63,7 +63,7 @@
 		508BEB6C18F8B53F23E1A1E4 /* include_juce_gui_basics.mm */ /* include_juce_gui_basics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_basics.mm; path = ../../JuceLibraryCode/include_juce_gui_basics.mm; sourceTree = SOURCE_ROOT; };
 		529A24A864BF0A925B63E181 /* include_juce_core_CompilationTime.cpp */ /* include_juce_core_CompilationTime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_core_CompilationTime.cpp; path = ../../JuceLibraryCode/include_juce_core_CompilationTime.cpp; sourceTree = SOURCE_ROOT; };
 		5367C72B94D2FB08C6E48A99 /* QuartzCore.framework */ /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		5770C97D85C513E6F74D7AD2 /* App */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudioSynthesiserDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5770C97D85C513E6F74D7AD2 /* App */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SphereSynth.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		57A5C10BCEDD1E0566EAFCE6 /* juce_core */ /* juce_core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_core; path = "~/JUCE/modules/juce_core"; sourceTree = "<absolute>"; };
 		5D394627BF8621253B24A957 /* include_juce_data_structures.mm */ /* include_juce_data_structures.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_data_structures.mm; path = ../../JuceLibraryCode/include_juce_data_structures.mm; sourceTree = SOURCE_ROOT; };
 		618AAE2E826EF40FEC169BBF /* AudioToolbox.framework */ /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -260,7 +260,7 @@
 			dependencies = (
 			);
 			name = "AudioSynthesiserDemo - App";
-			productName = AudioSynthesiserDemo;
+			productName = SphereSynth;
 			productReference = 5770C97D85C513E6F74D7AD2;
 			productType = "com.apple.product-type.application";
 		};
@@ -396,7 +396,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CODE_SIGN_FLAGS = --timestamp;
-				PRODUCT_NAME = "AudioSynthesiserDemo";
+				PRODUCT_NAME = "SphereSynth";
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wreorder";
 				ZERO_LINK = NO;
@@ -458,8 +458,8 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules";
-				PRODUCT_BUNDLE_IDENTIFIER = com.JUCE.AudioSynthesiserDemo;
-				PRODUCT_NAME = "AudioSynthesiserDemo";
+				PRODUCT_BUNDLE_IDENTIFIER = com.JUCE.SphereSynth;
+				PRODUCT_NAME = "SphereSynth";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
 			};
@@ -521,8 +521,8 @@
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules";
-				PRODUCT_BUNDLE_IDENTIFIER = com.JUCE.AudioSynthesiserDemo;
-				PRODUCT_NAME = "AudioSynthesiserDemo";
+				PRODUCT_BUNDLE_IDENTIFIER = com.JUCE.SphereSynth;
+				PRODUCT_NAME = "SphereSynth";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
 			};
@@ -569,7 +569,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				OTHER_CODE_SIGN_FLAGS = --timestamp;
-				PRODUCT_NAME = "AudioSynthesiserDemo";
+				PRODUCT_NAME = "SphereSynth";
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wreorder";
 				ZERO_LINK = NO;

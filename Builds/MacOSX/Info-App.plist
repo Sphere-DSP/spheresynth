@@ -8,11 +8,11 @@
     <key>CFBundleIconFile</key>
     <string></string>
     <key>CFBundleIdentifier</key>
-    <string>com.JUCE.AudioSynthesiserDemo</string>
+    <string>com.JUCE.SphereSynth</string>
     <key>CFBundleName</key>
-    <string>AudioSynthesiserDemo</string>
+    <string>SphereSynth</string>
     <key>CFBundleDisplayName</key>
-    <string>AudioSynthesiserDemo</string>
+    <string>SphereSynth</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>
