@@ -9,7 +9,6 @@
 #include "AudioSynthesiserDemo.h"
 #include <JuceHeader.h>
 
-
 class Application : public juce::JUCEApplication {
 public:
   //==============================================================================
@@ -49,7 +48,7 @@ private:
 #else
       setContentOwned(c.release(), true);
       setResizable(true, false);
-      setResizeLimits(300, 250, 10000, 10000);
+      setResizeLimits(700, 500, 10000, 10000);
       centreWithSize(getWidth(), getHeight());
 #endif
 
