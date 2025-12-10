@@ -1,0 +1,86 @@
+/* Pro Control Strip Layout */
+.comp-pro-controls {
+    display: flex;
+    align-items: flex-end;
+    /* Align knobs to bottom */
+    justify-content: space-between;
+    padding: 15px 30px;
+    background: linear-gradient(to bottom, #1a1a20, #0f0f12);
+    border-top: 1px solid #333;
+    height: 140px;
+    box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.comp-section {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    padding: 0 10px;
+    position: relative;
+}
+
+/* Vertical Separators between sections */
+.comp-section:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -7px;
+    top: 20px;
+    bottom: 20px;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, #444, transparent);
+}
+
+.comp-section-thresh {
+    padding-right: 20px;
+}
+
+.comp-section-main {
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.comp-delta-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.comp-delta-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #666;
+    background: #222;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.comp-delta-btn:hover {
+    border-color: #777;
+    color: #aaa;
+}
+
+.comp-delta-btn.active {
+    border-color: #00e5ff;
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.1);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+/* Knob text overrides for sleek look */
+.knob-value {
+    margin-top: 8px;
+    /* Push value down */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.knob-label {
+    margin-top: 2px;
+}
