@@ -196,6 +196,13 @@ public:
 
     webView.evaluateJavascript("updateSpectrum(" + inputJson + ", " +
                                outputJson + ")");
+
+    // Update compressor gain reduction meter and waveform
+    float gr = synthAudioSource.getCompressorGainReduction();
+    webView.evaluateJavascript("updateCompMeter(" + String(gr) + ")");
+    webView.evaluateJavascript("pushWaveformLevel(" +
+                               String(synthAudioSource.currentRMS.load()) +
+                               ")");
   }
 
   void resized() override { webView.setBounds(getLocalBounds()); }
@@ -423,6 +430,19 @@ inline void AudioSynthesiserDemo::handleSphereCommand(const String &url) {
 
       synthAudioSource.setEQCharacterMode(mode);
     }
+    synthAudioSource.setCompressorDelta(parts[2].getIntValue() != 0);
+  } else if (parts[1] == "threshold") {
+    synthAudioSource.setCompressorThreshold(parts[2].getFloatValue());
+  } else if (parts[1] == "ratio") {
+    synthAudioSource.setCompressorRatio(parts[2].getFloatValue());
+  } else if (parts[1] == "attack") {
+    synthAudioSource.setCompressorAttack(parts[2].getFloatValue());
+  } else if (parts[1] == "release") {
+    synthAudioSource.setCompressorRelease(parts[2].getFloatValue());
+  } else if (parts[1] == "makeup") {
+    synthAudioSource.setCompressorMakeup(parts[2].getFloatValue());
+  } else if (parts[1] == "knee") {
+    synthAudioSource.setCompressorKnee(parts[2].getFloatValue());
   }
 }
 
