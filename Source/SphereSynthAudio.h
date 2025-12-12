@@ -163,7 +163,7 @@ struct OscillatorVoice final : public juce::SynthesiserVoice {
     }
 
     currentAngle = 0.0;
-    level = velocity * 0.5; // Increased from 0.15 to 0.5 for louder output
+    level = velocity * 1.5; // Boosted for louder output (was 0.5)
     tailOff = 0.0;
 
     auto cyclesPerSecond =
@@ -235,7 +235,7 @@ private:
     case OscillatorSound::WaveType::Saw:
       return (float)(1.0 - (currentAngle / juce::MathConstants<double>::pi));
     case OscillatorSound::WaveType::Square:
-      return currentAngle < juce::MathConstants<double>::pi ? 0.8f : -0.8f; // Increased from 0.5 to 0.8
+      return currentAngle < juce::MathConstants<double>::pi ? 1.0f : -1.0f; // Full amplitude
     default:
       return 0.0f;
     }
@@ -277,7 +277,12 @@ struct SynthAudioSource final : public AudioSource {
   void setUsingSampledSound() {
     synth.clearSounds();
     
-    // Use cached WAV data from memory instead of reading from disk each time
+    // Try loading on demand if cache is empty
+    if (cachedWavData.getSize() == 0) {
+      cacheSampledSound();
+    }
+    
+    // Use cached WAV data from memory
     if (cachedWavData.getSize() > 0) {
       WavAudioFormat wavFormat;
       auto memStream = std::make_unique<MemoryInputStream>(cachedWavData, false);
@@ -288,8 +293,12 @@ struct SynthAudioSource final : public AudioSource {
         allNotes.setRange(0, 128, true);
         synth.addSound(new SamplerSound("demo sound", *reader, allNotes, 74,
                                         0.1, 0.1, 10.0));
+        return;
       }
     }
+    
+    // Fallback to sine wave if sampled sound failed to load
+    synth.addSound(new OscillatorSound(OscillatorSound::WaveType::Sine));
   }
 
   void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override {
@@ -321,6 +330,9 @@ struct SynthAudioSource final : public AudioSource {
                                         bufferToFill.numSamples, true);
     synth.renderNextBlock(*bufferToFill.buffer, incomingMidi, 0,
                           bufferToFill.numSamples);
+    
+    // Apply gain boost for sampled sounds (they're typically quieter)
+    bufferToFill.buffer->applyGain(3.0f);
 
     // Apply Sphere EQ V2
     eqEngine.processBlock(*bufferToFill.buffer, incomingMidi);
@@ -445,12 +457,25 @@ struct SynthAudioSource final : public AudioSource {
   }
 
 private:
-  // Cache WAV file data in memory at construction time to avoid disk I/O later
+  // Cache WAV file data in memory
   void cacheSampledSound() {
-    auto stream = createAssetInputStream("cello.wav");
-    if (stream != nullptr) {
-      cachedWavData.reset();
-      stream->readIntoMemoryBlock(cachedWavData);
+    // Try direct path relative to executable
+    auto exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+    if (!exeFile.exists()) return;
+    
+    auto assetFile = exeFile.getParentDirectory().getChildFile("examples").getChildFile("Assets").getChildFile("cello.wav");
+    
+    if (!assetFile.existsAsFile()) {
+      // Also try sibling path
+      assetFile = exeFile.getSiblingFile("examples").getChildFile("Assets").getChildFile("cello.wav");
+    }
+    
+    if (assetFile.existsAsFile()) {
+      auto stream = assetFile.createInputStream();
+      if (stream != nullptr) {
+        cachedWavData.reset();
+        stream->readIntoMemoryBlock(cachedWavData);
+      }
     }
   }
   

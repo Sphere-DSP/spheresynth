@@ -111,9 +111,20 @@ public:
     // HTML Content from resources
     String htmlContent = SphereSynthResources::html;
 
-    File tempFile = File::getSpecialLocation(File::tempDirectory)
-                        .getChildFile("sphere_synth.html");
+    File tempDir = File::getSpecialLocation(File::tempDirectory);
+    File tempFile = tempDir.getChildFile("sphere_synth.html");
     tempFile.replaceWithText(htmlContent);
+    
+    // Copy video file to temp directory if it exists
+    File exeFile = File::getSpecialLocation(File::currentExecutableFile);
+    File videoSrc = exeFile.getParentDirectory().getChildFile("colorful-galaxy.1920x1080.mp4");
+    if (videoSrc.existsAsFile()) {
+      File videoDst = tempDir.getChildFile("colorful-galaxy.1920x1080.mp4");
+      if (!videoDst.existsAsFile()) {
+        videoSrc.copyFileTo(videoDst);
+      }
+    }
+    
     webView.goToURL(URL(tempFile).toString(false));
 
     audioSourcePlayer.setSource(&synthAudioSource);

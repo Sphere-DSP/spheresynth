@@ -10,12 +10,11 @@ namespace SphereSynthResources {
       }
       *::selection { background: transparent; }
       *::-moz-selection { background: transparent; }
-      body { 
-        background: linear-gradient(135deg, #000000 0%, #000510 100%);
-        color: white; 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
-        height: 100vh; overflow: hidden; position: relative; cursor: default;
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: radial-gradient(ellipse at center, #0a0a1a 0%, #000005 50%, #000000 100%);
+        min-height: 100vh; display: flex; flex-direction: column;
+        align-items: center; overflow: hidden; -webkit-app-region: drag; position: relative;
+        color: white; cursor: default;
       }
       .top-nav { position: fixed; top: 0; left: 0; width: 100%; height: 60px;
         display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
@@ -36,10 +35,38 @@ namespace SphereSynthResources {
         color: rgba(255, 255, 255, 0.9); padding: 8px 16px; border-radius: 4px; font-size: 11px;
         font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
       }
-      h1 { font-size: clamp(24px, 5vw, 52px); font-weight: 200; letter-spacing: clamp(6px, 1.5vw, 14px);
-        color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.5); margin-bottom: 8px;
+      h1 { 
+        font-size: clamp(24px, 5vw, 52px); 
+        font-weight: 200; 
+        letter-spacing: clamp(6px, 1.5vw, 14px);
+        color: #ffffff; 
+        text-shadow: 
+          0 0 10px rgba(0, 229, 255, 0.8),
+          0 0 20px rgba(0, 229, 255, 0.6),
+          0 0 40px rgba(0, 229, 255, 0.4),
+          0 0 80px rgba(0, 229, 255, 0.2);
+        margin-bottom: 8px;
+        animation: titleGlow 3s ease-in-out infinite;
       }
-      .sphere-container { position: fixed; top: 80px; left: 0; width: 100%; bottom: 220px;
+      @keyframes titleGlow {
+        0%, 100% { 
+          text-shadow: 
+            0 0 10px rgba(0, 229, 255, 0.8),
+            0 0 20px rgba(0, 229, 255, 0.6),
+            0 0 40px rgba(0, 229, 255, 0.4),
+            0 0 80px rgba(0, 229, 255, 0.2);
+          color: #ffffff;
+        }
+        50% { 
+          text-shadow: 
+            0 0 20px rgba(0, 229, 255, 1),
+            0 0 40px rgba(0, 229, 255, 0.8),
+            0 0 60px rgba(100, 200, 255, 0.6),
+            0 0 100px rgba(0, 229, 255, 0.4);
+          color: #e0ffff;
+        }
+      }
+      .sphere-container { position: fixed; top: 60px; left: 0; width: 100%; bottom: 180px;
         z-index: 1; display: flex; align-items: center; justify-content: center;
       }
       canvas { display: block; width: 100%; height: 100%; }
@@ -302,6 +329,7 @@ namespace SphereSynthResources {
         
         const canvas = document.getElementById('glCanvas');
         const ctx = canvas ? canvas.getContext('2d') : null;
+        
         function resizeCanvas() {
             if (!canvas || !ctx) return;
             const container = canvas.parentElement;
@@ -309,6 +337,7 @@ namespace SphereSynthResources {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.scale(dpr, dpr);
             canvas.style.width = rect.width + 'px';
             canvas.style.height = rect.height + 'px';
@@ -316,43 +345,84 @@ namespace SphereSynthResources {
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
         
+
         class Particle {
-            constructor(x, y, angle) {
+            constructor(x, y, angle, ring) {
                 this.x = x; this.y = y; this.baseAngle = angle;
+                this.ring = ring; // 0, 1, or 2 for different orbital rings
                 this.speed = 0.3 + Math.random() * 0.5;
                 this.offset = Math.random() * Math.PI * 2;
-                this.size = 1.5 + Math.random() * 1.5;
-                this.opacity = 0.6 + Math.random() * 0.4;
-                this.hue = 180 + Math.random() * 60;
+                this.size = 1 + Math.random() * 2;
+                this.opacity = 0.5 + Math.random() * 0.5;
+                this.baseHue = 180 + ring * 30; // Different hue per ring
+                this.hue = this.baseHue;
                 this.vibrationPhase = Math.random() * Math.PI * 2;
+                this.trail = [];
+                this.trailLength = 5 + Math.floor(Math.random() * 5);
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.orbitDirection = ring % 2 === 0 ? 1 : -1;
             }
             update(centerX, centerY, time, audioIntensity, vibrationSpeed) {
-                const idleSpeed = 0.2;
+                // Store trail
+                if (this.trail.length > this.trailLength) this.trail.shift();
+                this.trail.push({x: this.x, y: this.y});
+                
+                const idleSpeed = 0.15;
                 const currentSpeed = idleSpeed + (vibrationSpeed - idleSpeed) * audioIntensity;
                 this.vibrationPhase += currentSpeed * 0.05;
-                const noise = Math.sin(this.vibrationPhase + this.offset) * 0.3;
+                
+                // Dynamic color shift based on audio
+                this.hue = this.baseHue + Math.sin(time * 0.5 + this.offset) * 20 + audioIntensity * 40;
+                
+                // Pulsing size
+                this.pulsePhase += 0.03;
+                const pulseFactor = 1 + Math.sin(this.pulsePhase) * 0.3 * (1 + audioIntensity);
+                
+                const noise = Math.sin(this.vibrationPhase + this.offset) * 0.4;
                 const angle = this.baseAngle + noise;
                 const effectiveRadius = Math.min(canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1)) / 2;
-                const baseDistance = Math.min(80, effectiveRadius * 0.35);
-                const distance = baseDistance + Math.sin(time * 0.3 + this.offset) * 20 + audioIntensity * 60;
+                
+                // Different radius per ring
+                const ringRadius = [0.3, 0.45, 0.6][this.ring];
+                const baseDistance = effectiveRadius * ringRadius;
+                const waveOffset = Math.sin(time * 0.3 + this.offset + this.ring) * 15;
+                const audioExpand = audioIntensity * 80;
+                const distance = baseDistance + waveOffset + audioExpand;
+                
                 this.x = centerX + Math.cos(angle) * distance;
                 this.y = centerY + Math.sin(angle) * distance;
-                this.baseAngle += 0.005 * currentSpeed * (this.offset > Math.PI ? 1 : -1);
+                this.baseAngle += 0.003 * currentSpeed * this.orbitDirection * (1 + this.ring * 0.3);
+                this.currentSize = this.size * pulseFactor;
             }
-            draw(ctx) {
-                const size = this.size * 0.8;
-                ctx.fillStyle = 'hsla(' + this.hue + ', 80%, 60%, ' + this.opacity + ')';
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = 'hsla(' + this.hue + ', 90%, 60%, 0.8)';
-                ctx.fillRect(this.x - size/2, this.y - size/2, size, size);
+            draw(ctx, audioIntensity) {
+                // Draw trail
+                for (let i = 0; i < this.trail.length; i++) {
+                    const t = this.trail[i];
+                    const alpha = (i / this.trail.length) * 0.3 * this.opacity;
+                    const size = this.currentSize * (i / this.trail.length) * 0.5;
+                    ctx.fillStyle = 'hsla(' + this.hue + ', 80%, 60%, ' + alpha + ')';
+                    ctx.fillRect(t.x - size/2, t.y - size/2, size, size);
+                }
+                
+                // Draw main particle with glow
+                const glowIntensity = 10 + audioIntensity * 20;
+                ctx.shadowBlur = glowIntensity;
+                ctx.shadowColor = 'hsla(' + this.hue + ', 100%, 60%, 0.9)';
+                ctx.fillStyle = 'hsla(' + this.hue + ', 85%, 65%, ' + this.opacity + ')';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.currentSize, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.shadowBlur = 0;
             }
         }
-        const numParticles = 500;
+        
+        // Create particles in 3 orbital rings
+        const numParticles = 600;
         const particles = [];
         for (let i = 0; i < numParticles; i++) {
-            const angle = (i / numParticles) * Math.PI * 2;
-            particles.push(new Particle(canvas ? canvas.width / 2 : 400, canvas ? canvas.height / 2 : 300, angle));
+            const ring = i % 3;
+            const angle = (i / numParticles) * Math.PI * 2 * 3; // Spiral distribution
+            particles.push(new Particle(canvas ? canvas.width / 2 : 400, canvas ? canvas.height / 2 : 300, angle, ring));
         }
         let activeNotes = 0, currentNotes = new Map(), audioIntensity = 0, vibrationSpeed = 0.5, time = 0;
         
@@ -442,6 +512,7 @@ namespace SphereSynthResources {
             const btn = document.querySelector('[data-view="' + viewName + '"]');
             if (btn) btn.classList.add('active');
             if (viewName === 'fx') initEQMiniCanvas();
+            if (viewName === 'synth') setTimeout(resizeCanvas, 50);
         }
         function selectSound(type, btn) {
             document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
@@ -515,7 +586,9 @@ namespace SphereSynthResources {
                 const dpr = window.devicePixelRatio || 1;
                 const centerX = (canvas.width / dpr) / 2;
                 const centerY = (canvas.height / dpr) / 2;
-                particles.forEach(p => { p.update(centerX, centerY, time, audioIntensity, vibrationSpeed); p.draw(ctx); });
+                
+                // Draw particles (sphere)
+                particles.forEach(p => { p.update(centerX, centerY, time, audioIntensity, vibrationSpeed); p.draw(ctx, audioIntensity); });
             }
             requestAnimationFrame(render);
         }
@@ -626,51 +699,51 @@ namespace SphereSynthResources {
             animateWaveform();
         }
         
+        function resizeAllCompCanvases() {
+            const panel = document.getElementById('comp-panel');
+            if (!panel || !panel.classList.contains('active')) return;
+            if (compTransferCanvas && compTransferCtx) {
+                resizeCompCanvas(compTransferCanvas, compTransferCtx);
+                drawTransferCurve();
+            }
+            if (compWaveformCanvas && compWaveformCtx) {
+                resizeCompCanvas(compWaveformCanvas, compWaveformCtx);
+            }
+        }
+        
+        window.addEventListener('resize', resizeAllCompCanvases);
+        
         function resizeCompCanvas(canvas, ctx) {
+            if (!canvas || !ctx) return;
             const rect = canvas.parentElement.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
             const dpr = window.devicePixelRatio || 1;
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
             ctx.scale(dpr, dpr);
             canvas.style.width = rect.width + 'px';
             canvas.style.height = rect.height + 'px';
         }
         
         function drawTransferCurve() {
-            if (!compTransferCtx) return;
+            if (!compTransferCtx || !compTransferCanvas) return;
+            
+            // Get actual canvas dimensions
+            const canvasW = compTransferCanvas.width;
+            const canvasH = compTransferCanvas.height;
             const dpr = window.devicePixelRatio || 1;
-            const w = compTransferCanvas.width / dpr;
-            const h = compTransferCanvas.height / dpr;
+            const w = canvasW / dpr;
+            const h = canvasH / dpr;
             const padding = 40;
             const graphW = w - padding * 2;
             const graphH = h - padding * 2;
             
-            compTransferCtx.clearRect(0, 0, w, h);
-            
-            // Draw grid
-            compTransferCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            compTransferCtx.lineWidth = 1;
-            for (let db = -60; db <= 0; db += 10) {
-                const x = padding + ((db + 60) / 60) * graphW;
-                const y = padding + ((0 - db) / 60) * graphH;
-                compTransferCtx.beginPath();
-                compTransferCtx.moveTo(x, padding);
-                compTransferCtx.lineTo(x, h - padding);
-                compTransferCtx.stroke();
-                compTransferCtx.beginPath();
-                compTransferCtx.moveTo(padding, y);
-                compTransferCtx.lineTo(w - padding, y);
-                compTransferCtx.stroke();
-            }
-            
-            // Draw 1:1 reference line (diagonal)
-            compTransferCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-            compTransferCtx.setLineDash([4, 4]);
-            compTransferCtx.beginPath();
-            compTransferCtx.moveTo(padding, h - padding);
-            compTransferCtx.lineTo(w - padding, padding);
-            compTransferCtx.stroke();
-            compTransferCtx.setLineDash([]);
+            // Clear entire canvas (raw pixels)
+            compTransferCtx.save();
+            compTransferCtx.setTransform(1, 0, 0, 1, 0, 0);
+            compTransferCtx.clearRect(0, 0, canvasW, canvasH);
+            compTransferCtx.restore();
             
             // Draw transfer curve
             compTransferCtx.strokeStyle = '#00e5ff';
@@ -750,6 +823,77 @@ namespace SphereSynthResources {
             // Above threshold
             const overThreshold = inputDb - thresh;
             return thresh + overThreshold / ratio;
+        }
+        
+        // Mouse handlers for threshold point dragging
+        function onCompMouseDown(e) {
+            if (!compTransferCanvas) return;
+            const rect = compTransferCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const w = compTransferCanvas.width / dpr;
+            const h = compTransferCanvas.height / dpr;
+            const padding = 40;
+            const graphW = w - padding * 2;
+            const graphH = h - padding * 2;
+            
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Calculate threshold point position
+            const threshX = padding + ((compSettings.threshold + 60) / 60) * graphW;
+            const threshY = padding + ((0 - compSettings.threshold) / 60) * graphH;
+            
+            // Check if click is near threshold point (within 15px)
+            const dist = Math.sqrt((mouseX - threshX) ** 2 + (mouseY - threshY) ** 2);
+            if (dist < 15) {
+                compDragging = true;
+                compTransferCanvas.style.cursor = 'grabbing';
+            }
+        }
+        
+        function onCompMouseMove(e) {
+            if (!compTransferCanvas) return;
+            const rect = compTransferCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const w = compTransferCanvas.width / dpr;
+            const h = compTransferCanvas.height / dpr;
+            const padding = 40;
+            const graphW = w - padding * 2;
+            const graphH = h - padding * 2;
+            
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            if (compDragging) {
+                // Convert mouse position to threshold dB value
+                const xNorm = (mouseX - padding) / graphW;
+                const newThreshold = Math.max(-60, Math.min(0, -60 + xNorm * 60));
+                
+                compSettings.threshold = Math.round(newThreshold * 10) / 10;
+                if (compKnobs && compKnobs['threshold']) {
+                    compKnobs['threshold'].setValue(compSettings.threshold);
+                }
+                window.location = 'sphere://comp/threshold/' + compSettings.threshold;
+                drawTransferCurve();
+            } else {
+                // Check if hovering over threshold point
+                const threshX = padding + ((compSettings.threshold + 60) / 60) * graphW;
+                const threshY = padding + ((0 - compSettings.threshold) / 60) * graphH;
+                const dist = Math.sqrt((mouseX - threshX) ** 2 + (mouseY - threshY) ** 2);
+                
+                if (dist < 15) {
+                    compTransferCanvas.style.cursor = 'grab';
+                } else {
+                    compTransferCanvas.style.cursor = 'default';
+                }
+            }
+        }
+        
+        function onCompMouseUp(e) {
+            compDragging = false;
+            if (compTransferCanvas) {
+                compTransferCanvas.style.cursor = 'default';
+            }
         }
     )JS";
 
@@ -899,33 +1043,21 @@ function animateWaveform() { drawWaveform(); requestAnimationFrame(animateWavefo
 
 function drawWaveform() {
     if (!compWaveformCtx || !compWaveformCanvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    const w = compWaveformCanvas.width / dpr;
-    const h = compWaveformCanvas.height / dpr;
     
-    // Full canvas area - no padding for waveform
-    compWaveformCtx.clearRect(0, 0, w * dpr, h * dpr);
+    const canvasW = compWaveformCanvas.width;
+    const canvasH = compWaveformCanvas.height;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvasW / dpr;
+    const h = canvasH / dpr;
+    
+    // Clear canvas properly
+    compWaveformCtx.save();
+    compWaveformCtx.setTransform(1, 0, 0, 1, 0, 0);
+    compWaveformCtx.clearRect(0, 0, canvasW, canvasH);
+    compWaveformCtx.restore();
     
     const wf = window.waveformBuffer || [];
     const gr = window.grBuffer || [];
-    
-    // Draw subtle background grid
-    compWaveformCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-    compWaveformCtx.lineWidth = 1;
-    for (let i = 0; i <= 6; i++) {
-        const y = (i / 6) * h;
-        compWaveformCtx.beginPath();
-        compWaveformCtx.moveTo(0, y);
-        compWaveformCtx.lineTo(w, y);
-        compWaveformCtx.stroke();
-    }
-    for (let i = 0; i <= 10; i++) {
-        const x = (i / 10) * w;
-        compWaveformCtx.beginPath();
-        compWaveformCtx.moveTo(x, 0);
-        compWaveformCtx.lineTo(x, h);
-        compWaveformCtx.stroke();
-    }
     
     // Layer 1: Input Signal (Gray filled area from bottom)
     if (wf.length > 0) {
