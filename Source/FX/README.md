@@ -186,3 +186,9 @@ Currently supported module types:
 - `Gate` - Noise gate (planned)
 - `Custom` - For custom effects
 
+
+
+
+
+
+

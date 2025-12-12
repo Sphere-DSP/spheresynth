@@ -55,3 +55,9 @@ inline std::vector<std::pair<ModuleType, juce::String>> getAvailableModules() {
 } // namespace FX
 } // namespace Sphere
 
+
+
+
+
+
+

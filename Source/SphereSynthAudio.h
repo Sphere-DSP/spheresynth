@@ -9,6 +9,7 @@
 #include "EQ/SphereEQBiquad.h"
 #include "EQ/SphereEQCookbook.h"
 #include "EQ/SphereEQEngineV2.h"
+#include "EQ/SphereEQTypes.h"
 #include "FX/Compressor/SphereCompressor.h"
 #include "FX/ModuleManager/SphereFXChain.h"
 #include "FX/SphereFX.h"
@@ -298,7 +299,6 @@ struct SynthAudioSource final : public AudioSource {
     // Apply Compressor
     juce::MidiBuffer emptyMidi;
     compressor.processBlock(*bufferToFill.buffer, emptyMidi);
-
     // Calculate RMS for visualization (avoid division, use approximation)
     if (bufferToFill.buffer->getNumChannels() > 0) {
       currentRMS.store(
