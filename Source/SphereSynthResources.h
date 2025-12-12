@@ -3,7 +3,7 @@
 
 namespace SphereSynthResources {
 
-    inline const juce::String css = R"CSS(
+inline const juce::String css = R"CSS(
       * { margin: 0; padding: 0; box-sizing: border-box;
         -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
         -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
@@ -151,7 +151,7 @@ namespace SphereSynthResources {
       .eq-mini-canvas { width: 100%; height: 100%; border-radius: 6px; background: rgba(0, 0, 0, 0.3); }
     )CSS";
 
-    inline const juce::String css2 = R"CSS(
+inline const juce::String css2 = R"CSS(
       .eq-panel { position: fixed; top: 60px; left: 0; right: 0; bottom: 0;
         background: rgba(5, 10, 20, 0.98); backdrop-filter: blur(30px); z-index: 1500;
         display: none; flex-direction: column; overflow: hidden;
@@ -322,7 +322,7 @@ namespace SphereSynthResources {
       }
     )CSS";
 
-    inline const juce::String jsPart1 = R"JS(
+inline const juce::String jsPart1 = R"JS(
         document.addEventListener('selectstart', (e) => e.preventDefault());
         document.addEventListener('dragstart', (e) => e.preventDefault());
         document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -493,7 +493,7 @@ namespace SphereSynthResources {
         }
     )JS";
 
-    inline const juce::String jsPart2 = R"JS(
+inline const juce::String jsPart2 = R"JS(
         function toggleSettings() {
             const modal = document.getElementById('settings-modal');
             if (!modal) return;
@@ -631,7 +631,7 @@ namespace SphereSynthResources {
         function initEQMiniCanvas() { const miniCanvas = document.getElementById('eq-mini-canvas'); if (!miniCanvas) return; const miniCtx = miniCanvas.getContext('2d'); const rect = miniCanvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1; miniCanvas.width = rect.width * dpr; miniCanvas.height = rect.height * dpr; miniCtx.scale(dpr, dpr); const w = rect.width, h = rect.height; miniCtx.clearRect(0, 0, w, h); miniCtx.strokeStyle = 'rgba(0, 229, 255, 0.3)'; miniCtx.lineWidth = 1; miniCtx.beginPath(); miniCtx.moveTo(0, h/2); miniCtx.lineTo(w, h/2); miniCtx.stroke(); miniCtx.strokeStyle = '#00e5ff'; miniCtx.lineWidth = 1.5; miniCtx.beginPath(); for (let x = 0; x < w; x++) { const freq = 20 * Math.pow(1000, x / w); let totalGain = 0; eqBands.forEach(b => { if (!b.active) return; totalGain += calculateBandResponse(b, freq); }); const y = h/2 - (totalGain / 24) * (h/2); if (x === 0) miniCtx.moveTo(x, y); else miniCtx.lineTo(x, y); } miniCtx.stroke(); }
     )JS";
 
-    inline const juce::String jsPart3 = R"JS(
+inline const juce::String jsPart3 = R"JS(
         // ============================================
         // SPHERE COMPRESSOR V2 - FabFilter Pro-C 2 Style
         // ============================================
@@ -897,7 +897,7 @@ namespace SphereSynthResources {
         }
     )JS";
 
-    inline const juce::String jsPart4 = R"JS(
+inline const juce::String jsPart4 = R"JS(
 class Knob {
     constructor(container, label, options = {}) {
         this.container = typeof container === 'string' ? document.getElementById(container) : container;
@@ -1180,10 +1180,11 @@ function resetComp() {
 // Canvas init happens via openComp -> initCompressorUI -> initCompCanvases
     )JS";
 
-    inline const juce::String js = jsPart1 + jsPart2 + jsPart3 + jsPart4;
+inline const juce::String js = jsPart1 + jsPart2 + jsPart3 + jsPart4;
 
-    inline const juce::String htmlPart1 = R"HTML(<!DOCTYPE html><html><head><meta charset="UTF-8"><style>)HTML";
-    inline const juce::String htmlPart2 = R"HTML(</style></head><body>
+inline const juce::String htmlPart1 =
+    R"HTML(<!DOCTYPE html><html><head><meta charset="UTF-8"><style>)HTML";
+inline const juce::String htmlPart2 = R"HTML(</style></head><body>
       <div class="top-nav">
         <button class="settings-btn" onclick="toggleSettings()">Settings</button>
         <div class="nav-center">
@@ -1264,9 +1265,9 @@ function resetComp() {
       </div>
       </body><script>)HTML";
 
-    inline const juce::String htmlPart3 = R"HTML(</script></html>)HTML";
+inline const juce::String htmlPart3 = R"HTML(</script></html>)HTML";
 
-    inline const juce::String css3 = R"CSS(
+inline const juce::String css3 = R"CSS(
 /* Pro Control Strip Layout */
 .comp-pro-controls { display: flex; align-items: flex-end; justify-content: space-between; padding: 15px 30px; background: linear-gradient(to bottom, #1a1a20, #0f0f12); border-top: 1px solid #333; height: 140px; box-shadow: inset 0 10px 20px rgba(0,0,0,0.5); }
 .comp-section { display: flex; gap: 15px; align-items: flex-end; padding: 0 10px; position: relative; }
@@ -1299,5 +1300,6 @@ function resetComp() {
 .comp-gr-led.green { background: #76ff03; box-shadow: 0 0 5px #76ff03; }
 .comp-gr-value { margin-top: 10px; color: #ff3d00; font-family: monospace; font-size: 10px; font-weight: bold; }
     )CSS";
-    inline const juce::String html = htmlPart1 + css + css2 + css3 + htmlPart2 + js + htmlPart3;
-}
+inline const juce::String html =
+    htmlPart1 + css + css2 + css3 + htmlPart2 + js + htmlPart3;
+} // namespace SphereSynthResources

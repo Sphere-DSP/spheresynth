@@ -1,137 +1,17 @@
 #pragma once
-#include <JuceHeader.h>
 #include "DemoUtilities.h"
-#include <atomic>
+#include <JuceHeader.h>
 #include <algorithm>
+#include <atomic>
 
-#include "EQ/SphereEQTypes.h"
-#include "EQ/SphereEQCookbook.h"
-#include "EQ/SphereEQBiquad.h"
+// Include new EQ system (header-only design)
 #include "EQ/SphereEQBandProcessor.h"
+#include "EQ/SphereEQBiquad.h"
+#include "EQ/SphereEQCookbook.h"
 #include "EQ/SphereEQEngineV2.h"
-
-// ============================================================================
-// Simple Compressor - Standalone implementation
-// ============================================================================
-namespace Sphere {
-
-class SimpleCompressor {
-public:
-    void prepare(double sampleRate, int blockSize) {
-        this->sampleRate = sampleRate;
-        updateCoefficients();
-    }
-    
-    void reset() {
-        envelopeL = envelopeR = 0.0f;
-        currentGainReduction = 0.0f;
-    }
-    
-    void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) {
-        if (!enabled) return;
-        
-        const int numSamples = buffer.getNumSamples();
-        const int numChannels = buffer.getNumChannels();
-        if (numChannels == 0 || numSamples == 0) return;
-        
-        float* left = buffer.getWritePointer(0);
-        float* right = numChannels > 1 ? buffer.getWritePointer(1) : nullptr;
-        
-        float maxGR = 0.0f;
-        float maxEnvDb = -100.0f;
-        
-        for (int i = 0; i < numSamples; ++i) {
-            float inputL = std::abs(left[i]);
-            float inputR = right ? std::abs(right[i]) : inputL;
-            
-            // Envelope following
-            if (inputL > envelopeL) envelopeL += attackCoeff * (inputL - envelopeL);
-            else envelopeL += releaseCoeff * (inputL - envelopeL);
-            
-            if (inputR > envelopeR) envelopeR += attackCoeff * (inputR - envelopeR);
-            else envelopeR += releaseCoeff * (inputR - envelopeR);
-            
-            float env = std::max(envelopeL, envelopeR);
-            
-            // Convert to dB
-            float envDb = (env > 1e-10f) ? 20.0f * std::log10(env) : -100.0f;
-            maxEnvDb = std::max(maxEnvDb, envDb);
-            
-            // Calculate gain reduction
-            float gainReductionDb = calculateGainReduction(envDb);
-            maxGR = std::max(maxGR, gainReductionDb);
-            
-            // Apply gain reduction + makeup
-            float gain = std::pow(10.0f, (-gainReductionDb + makeupGainDb) / 20.0f);
-            
-            left[i] *= gain;
-            if (right) right[i] *= gain;
-        }
-        
-        currentGainReduction = maxGR;
-        
-        // Debug output (every ~1 second at 44100 Hz)
-        debugCounter += numSamples;
-        if (debugCounter > 44100 && maxEnvDb > -80.0f) {
-            std::cout << "[COMP] EnvDb: " << maxEnvDb << " Threshold: " << thresholdDb << " GR: " << maxGR << std::endl;
-            debugCounter = 0;
-        }
-    }
-    
-    // Setters
-    void setEnabled(bool e) { enabled = e; }
-    void setThreshold(float db) { thresholdDb = juce::jlimit(-60.0f, 0.0f, db); }
-    void setRatio(float r) { ratio = juce::jlimit(1.0f, 100.0f, r); }
-    void setAttack(float ms) { attackMs = juce::jlimit(0.1f, 500.0f, ms); updateCoefficients(); }
-    void setRelease(float ms) { releaseMs = juce::jlimit(10.0f, 3000.0f, ms); updateCoefficients(); }
-    void setMakeupGain(float db) { makeupGainDb = juce::jlimit(-12.0f, 24.0f, db); }
-    void setKneeWidth(float db) { kneeWidthDb = juce::jlimit(0.0f, 24.0f, db); }
-    
-    // Getters
-    float getGainReduction() const { return currentGainReduction; }
-
-private:
-    float calculateGainReduction(float inputDb) const {
-        if (inputDb < thresholdDb - kneeWidthDb / 2.0f) return 0.0f;
-        
-        float overThreshold;
-        if (kneeWidthDb > 0.0f && inputDb < thresholdDb + kneeWidthDb / 2.0f) {
-            float x = inputDb - thresholdDb + kneeWidthDb / 2.0f;
-            overThreshold = (x * x) / (2.0f * kneeWidthDb);
-        } else {
-            overThreshold = inputDb - thresholdDb;
-        }
-        
-        return std::max(0.0f, overThreshold * (1.0f - 1.0f / ratio));
-    }
-    
-    void updateCoefficients() {
-        if (sampleRate > 0.0) {
-            attackCoeff = 1.0f - std::exp(-1.0f / (float(sampleRate) * attackMs * 0.001f));
-            releaseCoeff = 1.0f - std::exp(-1.0f / (float(sampleRate) * releaseMs * 0.001f));
-        }
-    }
-    
-    bool enabled = true;
-    double sampleRate = 44100.0;
-    float thresholdDb = -50.0f;  // Lower default to match synth output levels
-    float ratio = 4.0f;
-    float attackMs = 10.0f;
-    float releaseMs = 100.0f;
-    float makeupGainDb = 0.0f;
-    float kneeWidthDb = 6.0f;
-    
-    float attackCoeff = 0.1f;
-    float releaseCoeff = 0.01f;
-    float envelopeL = 0.0f;
-    float envelopeR = 0.0f;
-    float currentGainReduction = 0.0f;
-    int debugCounter = 0;
-};
-
-} // namespace Sphere
-
-#include "FX/Compressor/SphereCompressor.h"
+#include "EQ/SphereEQTypes.h"
+#include "FX/SphereFX.h"
+// #include <juce_dsp/juce_dsp.h> // Removed due to linker errors
 
 using namespace juce;
 
@@ -163,7 +43,7 @@ struct OscillatorVoice final : public juce::SynthesiserVoice {
     }
 
     currentAngle = 0.0;
-    level = velocity * 1.5; // Boosted for louder output (was 0.5)
+    level = velocity * 0.15;
     tailOff = 0.0;
 
     auto cyclesPerSecond =
@@ -227,6 +107,8 @@ struct OscillatorVoice final : public juce::SynthesiserVoice {
     }
   }
 
+  using SynthesiserVoice::renderNextBlock;
+
 private:
   float getNextSample() {
     switch (currentWaveType) {
@@ -235,7 +117,7 @@ private:
     case OscillatorSound::WaveType::Saw:
       return (float)(1.0 - (currentAngle / juce::MathConstants<double>::pi));
     case OscillatorSound::WaveType::Square:
-      return currentAngle < juce::MathConstants<double>::pi ? 1.0f : -1.0f; // Full amplitude
+      return currentAngle < juce::MathConstants<double>::pi ? 0.5f : -0.5f;
     default:
       return 0.0f;
     }
@@ -253,10 +135,52 @@ struct SynthAudioSource final : public AudioSource {
       synth.addVoice(new OscillatorVoice());
       synth.addVoice(new SamplerVoice());
     }
-    
+
     // Pre-cache the sampled sound to avoid disk I/O on sound change
     cacheSampledSound();
     setUsingSineWaveSound();
+
+    // Initialize FX Chain
+    fxChain = Sphere::FX::createDefaultChain();
+  }
+
+  void runUnitTests() {
+    DBG("=== Running Sphere Synth Unit Tests ===");
+
+    // Test 1: Audio Processing Chain Integrity
+    juce::AudioBuffer<float> testBuffer(2, 512);
+    testBuffer.clear();
+    // Inject impulse
+    testBuffer.setSample(0, 0, 1.0f);
+    testBuffer.setSample(1, 0, 1.0f);
+
+    juce::MidiBuffer midi;
+
+    // Process through chain
+    if (fxChain)
+      fxChain->processBlock(testBuffer, midi);
+    eqEngine.processBlock(testBuffer, midi);
+
+    // Check if signal passed through (should not be silent or NaN)
+    float magnitude = testBuffer.getMagnitude(0, 512);
+    if (magnitude > 0.0f && !std::isnan(magnitude)) {
+      DBG("[PASS] Audio Chain Processing");
+    } else {
+      DBG("[FAIL] Audio Chain Processing (Silent or NaN)");
+    }
+
+    // Test 2: EQ Parameter Update
+    Sphere::EQBandParams params;
+    params.gainDb = 5.0f;
+    eqEngine.setBandParameters(0, params);
+    auto readBack = eqEngine.getBandParameters(0);
+    if (std::abs(readBack.gainDb - 5.0f) < 0.001f) {
+      DBG("[PASS] EQ Parameter Update");
+    } else {
+      DBG("[FAIL] EQ Parameter Update");
+    }
+
+    DBG("=== Tests Complete ===");
   }
 
   void setUsingSineWaveSound() {
@@ -276,50 +200,51 @@ struct SynthAudioSource final : public AudioSource {
 
   void setUsingSampledSound() {
     synth.clearSounds();
-    
-    // Try loading on demand if cache is empty
-    if (cachedWavData.getSize() == 0) {
-      cacheSampledSound();
-    }
-    
-    // Use cached WAV data from memory
+
+    // Use cached WAV data from memory instead of reading from disk each time
     if (cachedWavData.getSize() > 0) {
       WavAudioFormat wavFormat;
-      auto memStream = std::make_unique<MemoryInputStream>(cachedWavData, false);
-      std::unique_ptr<AudioFormatReader> reader(wavFormat.createReaderFor(memStream.release(), true));
-      
+      auto memStream =
+          std::make_unique<MemoryInputStream>(cachedWavData, false);
+      std::unique_ptr<AudioFormatReader> reader(
+          wavFormat.createReaderFor(memStream.release(), true));
+
       if (reader != nullptr) {
         BigInteger allNotes;
         allNotes.setRange(0, 128, true);
         synth.addSound(new SamplerSound("demo sound", *reader, allNotes, 74,
                                         0.1, 0.1, 10.0));
-        return;
       }
     }
-    
-    // Fallback to sine wave if sampled sound failed to load
-    synth.addSound(new OscillatorSound(OscillatorSound::WaveType::Sine));
   }
 
   void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override {
     midiCollector.reset(sampleRate);
     synth.setCurrentPlaybackSampleRate(sampleRate);
-    
+
     // Use actual host block size instead of fixed 4096
     // This optimizes buffer allocation for the real processing scenario
     int actualBlockSize = juce::jmax(samplesPerBlockExpected, 256);
     eqEngine.prepare(sampleRate, actualBlockSize, 2);
-    
+
     setupDefaultEQBands();
-    
-    // Prepare Compressor
-    compressor.prepare(sampleRate, actualBlockSize);
+
+    // Prepare FX Chain
+    if (fxChain) {
+      // AudioContext: sampleRate, blockSize, numChannels, bpm, ppq, isPlaying
+      fxChain->prepare({sampleRate, actualBlockSize, 2, 120.0, 0.0, true});
+    }
+
+    // Prepare Output Stage
+    outputGainLinear = 1.0f;
+    // Limiter is stateless hard/soft clip for now to avoid DSP dependency
+    // issues
+
+    // Run tests on startup
+    runUnitTests();
   }
 
-  void releaseResources() override {
-      eqEngine.reset();
-      compressor.reset();
-  }
+  void releaseResources() override { eqEngine.reset(); }
 
   void getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) override {
     bufferToFill.clearActiveBufferRegion();
@@ -330,16 +255,41 @@ struct SynthAudioSource final : public AudioSource {
                                         bufferToFill.numSamples, true);
     synth.renderNextBlock(*bufferToFill.buffer, incomingMidi, 0,
                           bufferToFill.numSamples);
-    
-    // Apply gain boost for sampled sounds (they're typically quieter)
-    bufferToFill.buffer->applyGain(3.0f);
+
+    // Apply FX Chain
+    if (fxChain) {
+      fxChain->processBlock(*bufferToFill.buffer, incomingMidi);
+    }
 
     // Apply Sphere EQ V2
     eqEngine.processBlock(*bufferToFill.buffer, incomingMidi);
-    
-    // Apply Compressor
-    juce::MidiBuffer emptyMidi;
-    compressor.processBlock(*bufferToFill.buffer, emptyMidi);
+
+    // Apply Output Stage (Gain + Soft Clip Limiter)
+    auto *left = bufferToFill.buffer->getWritePointer(0);
+    auto *right = bufferToFill.buffer->getNumChannels() > 1
+                      ? bufferToFill.buffer->getWritePointer(1)
+                      : nullptr;
+
+    for (int i = 0; i < bufferToFill.numSamples; ++i) {
+      // Apply Gain
+      float l = left[i] * outputGainLinear;
+      float r = right ? right[i] * outputGainLinear : l;
+
+      // Apply Soft Clip Limiter (tanh-like)
+      // Simple hard clip at 1.0 for safety, soft knee could be added
+      if (l > 1.0f)
+        l = 1.0f;
+      else if (l < -1.0f)
+        l = -1.0f;
+      if (r > 1.0f)
+        r = 1.0f;
+      else if (r < -1.0f)
+        r = -1.0f;
+
+      left[i] = l;
+      if (right)
+        right[i] = r;
+    }
 
     // Calculate RMS for visualization (avoid division, use approximation)
     if (bufferToFill.buffer->getNumChannels() > 0) {
@@ -348,65 +298,90 @@ struct SynthAudioSource final : public AudioSource {
           std::memory_order_relaxed);
     }
   }
-  
+
   // ============================================================================
   // EQ Control Interface
   // ============================================================================
-  void setEQEnabled(bool enabled) {
-      eqEngine.setEnabled(enabled);
+  void setEQEnabled(bool enabled) { eqEngine.setEnabled(enabled); }
+
+  void setEQBandParameters(int bandIndex, const Sphere::EQBandParams &params) {
+    eqEngine.setBandParameters(bandIndex, params);
   }
-  
-  void setEQBandParameters(int bandIndex, const Sphere::EQBandParams& params) {
-      eqEngine.setBandParameters(bandIndex, params);
-  }
-  
+
   void setEQBandType(int bandIndex, Sphere::EQFilterType type) {
-      eqEngine.setBandType(bandIndex, type);
+    eqEngine.setBandType(bandIndex, type);
   }
-  
+
   void setEQBandFrequency(int bandIndex, double frequency) {
-      eqEngine.setBandFrequency(bandIndex, frequency);
+    eqEngine.setBandFrequency(bandIndex, frequency);
   }
-  
-  void setEQBandQ(int bandIndex, double q) {
-      eqEngine.setBandQ(bandIndex, q);
-  }
-  
+
+  void setEQBandQ(int bandIndex, double q) { eqEngine.setBandQ(bandIndex, q); }
+
   void setEQBandGain(int bandIndex, double gainDb) {
-      eqEngine.setBandGain(bandIndex, gainDb);
+    eqEngine.setBandGain(bandIndex, gainDb);
   }
-  
+
   void setEQBandSlope(int bandIndex, Sphere::EQSlope slope) {
-      eqEngine.setBandSlope(bandIndex, slope);
+    eqEngine.setBandSlope(bandIndex, slope);
   }
-  
+
   void setEQBandBypass(int bandIndex, bool bypass) {
-      eqEngine.setBandBypass(bandIndex, bypass);
+    eqEngine.setBandBypass(bandIndex, bypass);
   }
-  
+
   void setEQBandStereoMode(int bandIndex, Sphere::EQStereoMode mode) {
-      eqEngine.setBandStereoMode(bandIndex, mode);
+    eqEngine.setBandStereoMode(bandIndex, mode);
   }
-  
+
   void setEQBandDynamicMode(int bandIndex, Sphere::EQDynamicMode mode) {
-      eqEngine.setBandDynamicMode(bandIndex, mode);
+    eqEngine.setBandDynamicMode(bandIndex, mode);
   }
-  
+
   void setEQBandDynamicParams(int bandIndex, double threshold, double ratio,
-                               double attack, double release, double range) {
-      eqEngine.setBandDynamicParams(bandIndex, threshold, ratio, attack, release, range);
+                              double attack, double release, double range) {
+    eqEngine.setBandDynamicParams(bandIndex, threshold, ratio, attack, release,
+                                  range);
   }
-  
-  void setEQBandCharacter(int bandIndex, Sphere::EQCharacterMode mode) {
-      eqEngine.setBandCharacter(bandIndex, mode);
+
+  void setEQCharacterMode(Sphere::EQCharacterMode mode) {
+    eqEngine.setGlobalCharacterMode(mode);
   }
-  
+
+  // Analyzer Access
+  const Sphere::SphereEQAnalyzer &getInputAnalyzer() const {
+    return eqEngine.getInputAnalyzer();
+  }
+  const Sphere::SphereEQAnalyzer &getOutputAnalyzer() const {
+    return eqEngine.getOutputAnalyzer();
+  }
+
+  // ============================================================================
+  // Phase Mode Controls
+  // ============================================================================
+  void setEQPhaseMode(Sphere::EQPhaseMode mode) { eqEngine.setPhaseMode(mode); }
+
+  Sphere::EQPhaseMode getEQPhaseMode() const { return eqEngine.getPhaseMode(); }
+
+  void setEQOversampleFactor(Sphere::SphereEQOversampler::Factor factor) {
+    eqEngine.setOversampleFactor(factor);
+  }
+
+  void setEQLinearPhaseLength(Sphere::LinearPhaseLength length) {
+    eqEngine.setLinearPhaseLength(length);
+  }
+
+  // ============================================================================
+  // Latency Reporting (for host compensation)
+  // ============================================================================
+  int getEQLatencySamples() const { return eqEngine.getLatencySamples(); }
+
   double getEQMagnitudeResponse(double frequency) const {
-      return eqEngine.getMagnitudeResponseDb(frequency);
+    return eqEngine.getMagnitudeResponseDb(frequency);
   }
-  
-  const Sphere::EQBandParams& getEQBandParameters(int bandIndex) const {
-      return eqEngine.getBandParameters(bandIndex);
+
+  const Sphere::EQBandParams &getEQBandParameters(int bandIndex) const {
+    return eqEngine.getBandParameters(bandIndex);
   }
 
   // Public members that need external access
@@ -415,81 +390,35 @@ struct SynthAudioSource final : public AudioSource {
   MidiKeyboardState &keyboardState;
   Synthesiser synth;
   Sphere::SphereEQEngineV2 eqEngine;
-  Sphere::SphereCompressor compressor;
-  
-  // ============================================================================
-  // Compressor Control Interface
-  // ============================================================================
-  void setCompressorEnabled(bool enabled) {
-      compressor.setEnabled(enabled);
-  }
-  
-  void setCompressorDelta(bool enabled) {
-      compressor.setDeltaMonitoring(enabled);
-  }
-  
-  void setCompressorThreshold(float thresholdDb) {
-      compressor.setThreshold(thresholdDb);
-  }
-  
-  void setCompressorRatio(float ratio) {
-      compressor.setRatio(ratio);
-  }
-  
-  void setCompressorAttack(float attackMs) {
-      compressor.setAttack(attackMs);
-  }
-  
-  void setCompressorRelease(float releaseMs) {
-      compressor.setRelease(releaseMs);
-  }
-  
-  void setCompressorMakeup(float makeupDb) {
-      compressor.setMakeupGain(makeupDb);
-  }
-  
-  void setCompressorKnee(float kneeDb) {
-      compressor.setKneeWidth(kneeDb);
-  }
-  
-  float getCompressorGainReduction() const {
-      return compressor.getGainReduction();
-  }
+  std::unique_ptr<Sphere::FX::FXChain> fxChain;
+  float outputGainLinear = 1.0f;
 
 private:
-  // Cache WAV file data in memory
+  // Cache WAV file data in memory at construction time to avoid disk I/O later
   void cacheSampledSound() {
-    // Try direct path relative to executable
-    auto exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
-    if (!exeFile.exists()) return;
-    
-    auto assetFile = exeFile.getParentDirectory().getChildFile("examples").getChildFile("Assets").getChildFile("cello.wav");
-    
-    if (!assetFile.existsAsFile()) {
-      // Also try sibling path
-      assetFile = exeFile.getSiblingFile("examples").getChildFile("Assets").getChildFile("cello.wav");
-    }
-    
-    if (assetFile.existsAsFile()) {
-      auto stream = assetFile.createInputStream();
-      if (stream != nullptr) {
-        cachedWavData.reset();
-        stream->readIntoMemoryBlock(cachedWavData);
-      }
+    auto stream = createAssetInputStream("cello.wav");
+    if (stream != nullptr) {
+      cachedWavData.reset();
+      stream->readIntoMemoryBlock(cachedWavData);
     }
   }
-  
+
   void setupDefaultEQBands() {
-      // VERY NOTICEABLE TEST: Low pass at 800Hz - should sound muffled!
-      Sphere::EQBandParams p0;
-      p0.bypass = false;
-      p0.type = Sphere::EQFilterType::HighCut;  // Low pass filter
-      p0.frequency = 800.0;  // Cut everything above 800Hz
-      p0.q = 0.707;
-      p0.slope = Sphere::EQSlope::dB24;  // 24dB/oct
-      eqEngine.setBandParameters(0, p0);
+    DBG("=== Setting up default EQ bands ===");
+
+    // VERY NOTICEABLE TEST: Low pass at 800Hz - should sound muffled!
+    Sphere::EQBandParams p0;
+    p0.bypass = false;
+    p0.type = Sphere::EQFilterType::HighCut; // Low pass filter
+    p0.frequency = 800.0;                    // Cut everything above 800Hz
+    p0.q = 0.707;
+    p0.slope = Sphere::EQSlope::dB24; // 24dB/oct
+    eqEngine.setBandParameters(0, p0);
+
+    DBG("=== EQ Setup complete: HighCut at 800Hz 24dB/oct ===");
+    DBG("=== Sound should be noticeably muffled! ===");
   }
-  
+
   // Cached WAV data in memory
   MemoryBlock cachedWavData;
 };
