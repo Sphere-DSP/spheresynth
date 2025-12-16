@@ -93,11 +93,7 @@ public:
   // Custom WebBrowserComponent to intercept URL calls
   class SphereSynthBrowser : public WebBrowserComponent {
   public:
-    SphereSynthBrowser(AudioSynthesiserDemo &owner)
-        : WebBrowserComponent(
-              WebBrowserComponent::Options()
-                  .withBackend(WebBrowserComponent::Options::Backend::webview2)),
-          owner(owner) {}
+    SphereSynthBrowser(AudioSynthesiserDemo &owner) : owner(owner) {}
 
     bool pageAboutToLoad(const String &newURL) override;
 
@@ -108,24 +104,34 @@ public:
   AudioSynthesiserDemo() {
     addAndMakeVisible(webView);
 
-    // HTML Content from resources
+    // HTML Content from resources - use unique random filename every time
     String htmlContent = SphereSynthResources::html;
 
+    // Generate truly unique filename with random component
+    Random random;
+    String uniqueId = String(Time::currentTimeMillis()) + "_" +
+                      String(random.nextInt(999999));
+    File tempFile = File::getSpecialLocation(File::tempDirectory)
+                        .getChildFile("ss_" + uniqueId + ".html");
+
+    // Clean up ALL old temp files first
     File tempDir = File::getSpecialLocation(File::tempDirectory);
-    File tempFile = tempDir.getChildFile("sphere_synth.html");
-    tempFile.replaceWithText(htmlContent);
-    
-    // Copy video file to temp directory if it exists
-    File exeFile = File::getSpecialLocation(File::currentExecutableFile);
-    File videoSrc = exeFile.getParentDirectory().getChildFile("colorful-galaxy.1920x1080.mp4");
-    if (videoSrc.existsAsFile()) {
-      File videoDst = tempDir.getChildFile("colorful-galaxy.1920x1080.mp4");
-      if (!videoDst.existsAsFile()) {
-        videoSrc.copyFileTo(videoDst);
-      }
+    for (auto &file :
+         tempDir.findChildFiles(File::findFiles, false, "ss_*.html")) {
+      file.deleteFile();
     }
-    
-    webView.goToURL(URL(tempFile).toString(false));
+    for (auto &file : tempDir.findChildFiles(File::findFiles, false,
+                                             "sphere_synth_*.html")) {
+      file.deleteFile();
+    }
+
+    // Write and load fresh HTML
+    tempFile.replaceWithText(htmlContent);
+
+    // Use file:// URL with cache-busting query parameter
+    String fileUrl =
+        "file://" + tempFile.getFullPathName() + "?nocache=" + uniqueId;
+    webView.goToURL(fileUrl);
 
     audioSourcePlayer.setSource(&synthAudioSource);
 
@@ -136,7 +142,8 @@ public:
     audioDeviceManager.addAudioCallback(&callback);
     audioDeviceManager.addMidiInputDeviceCallback(
         {}, &(synthAudioSource.midiCollector));
-    // NOTE: Removed duplicate MIDI callback registration that was causing double note processing
+    // NOTE: Removed duplicate MIDI callback registration that was causing
+    // double note processing
     keyboardState.addListener(this);
     startTimerHz(30);
 
@@ -154,15 +161,43 @@ public:
   }
 
   void timerCallback() override {
-    float level = synthAudioSource.currentRMS;
-    // Boost the level slightly for better visual response
-    level = std::min(1.0f, level * 6.0f);
-    webView.evaluateJavascript("updateMeter(" + String(level) + ")");
-    
-    // Update compressor gain reduction meter and waveform
-    float gr = synthAudioSource.getCompressorGainReduction();
-    webView.evaluateJavascript("updateCompMeter(" + String(gr) + ")");
-    webView.evaluateJavascript("pushWaveformLevel(" + String(synthAudioSource.currentRMS.load()) + ")");
+    float levelL =
+        std::min(1.0f, synthAudioSource.currentRMSLeft.load() * 6.0f);
+    float levelR =
+        std::min(1.0f, synthAudioSource.currentRMSRight.load() * 6.0f);
+    webView.evaluateJavascript("updateMeter(" + String(levelL) + ", " +
+                               String(levelR) + ")");
+
+    // Send Spectrum Data
+    // We send data as a JSON object: { "input": [...], "output": [...] }
+    // To optimize, we only send every Nth frame or use a lower resolution if
+    // needed. For now, we send 1024 bins (half of 2048 FFT)
+
+    // Input spectrum
+    const auto &inputMags = synthAudioSource.getInputAnalyzer().getMagnitudes();
+    String inputJson = "[";
+    size_t inputSize = std::min(inputMags.size(), (size_t)1024);
+    for (size_t i = 0; i < inputSize; i++) {
+      inputJson += String(inputMags[i], 1);
+      if (i < inputSize - 1)
+        inputJson += ",";
+    }
+    inputJson += "]";
+
+    // Output spectrum
+    const auto &outputMags =
+        synthAudioSource.getOutputAnalyzer().getMagnitudes();
+    String outputJson = "[";
+    size_t outputSize = std::min(outputMags.size(), (size_t)1024);
+    for (size_t i = 0; i < outputSize; i++) {
+      outputJson += String(outputMags[i], 1);
+      if (i < outputSize - 1)
+        outputJson += ",";
+    }
+    outputJson += "]";
+
+    webView.evaluateJavascript("updateSpectrum(" + inputJson + ", " +
+                               outputJson + ")");
   }
 
   void resized() override { webView.setBounds(getLocalBounds()); }
@@ -271,24 +306,124 @@ inline void AudioSynthesiserDemo::handleSphereCommand(const String &url) {
       }
       sendDevicesToUI();
     }
-  } else if (parts[0] == "comp") {
-    // Compressor commands: comp/enable/1, comp/threshold/-20, etc.
+  } else if (parts[0] == "eq") {
+    // EQ Commands
     if (parts[1] == "enable") {
-      synthAudioSource.setCompressorEnabled(parts[2].getIntValue() != 0);
-    } else if (parts[1] == "delta") {
-      synthAudioSource.setCompressorDelta(parts[2].getIntValue() != 0);
-    } else if (parts[1] == "threshold") {
-      synthAudioSource.setCompressorThreshold(parts[2].getFloatValue());
-    } else if (parts[1] == "ratio") {
-      synthAudioSource.setCompressorRatio(parts[2].getFloatValue());
-    } else if (parts[1] == "attack") {
-      synthAudioSource.setCompressorAttack(parts[2].getFloatValue());
-    } else if (parts[1] == "release") {
-      synthAudioSource.setCompressorRelease(parts[2].getFloatValue());
-    } else if (parts[1] == "makeup") {
-      synthAudioSource.setCompressorMakeup(parts[2].getFloatValue());
-    } else if (parts[1] == "knee") {
-      synthAudioSource.setCompressorKnee(parts[2].getFloatValue());
+      bool enable = parts[2].getIntValue() != 0;
+      synthAudioSource.setEQEnabled(enable);
+    } else if (parts[1] == "band") {
+      // Format: eq/band/index/active/type/freq/gain/q
+      int bandIndex = parts[2].getIntValue();
+      bool active = parts[3].getIntValue() != 0;
+      String typeStr = parts[4];
+      double freq = parts[5].getDoubleValue();
+      double gain = parts[6].getDoubleValue();
+      double q = parts[7].getDoubleValue();
+
+      Sphere::EQBandParams params;
+      params.bypass = !active;
+      params.frequency = freq;
+      params.gainDb = gain;
+      params.q = q;
+
+      // Parse type string
+      if (typeStr == "bell")
+        params.type = Sphere::EQFilterType::Bell;
+      else if (typeStr == "lowshelf")
+        params.type = Sphere::EQFilterType::LowShelf;
+      else if (typeStr == "highshelf")
+        params.type = Sphere::EQFilterType::HighShelf;
+      else if (typeStr == "lowcut")
+        params.type = Sphere::EQFilterType::LowCut;
+      else if (typeStr == "highcut")
+        params.type = Sphere::EQFilterType::HighCut;
+      else if (typeStr == "notch")
+        params.type = Sphere::EQFilterType::Notch;
+      else if (typeStr == "bandpass")
+        params.type = Sphere::EQFilterType::BandPass;
+      else if (typeStr == "tilt")
+        params.type = Sphere::EQFilterType::Tilt;
+      else if (typeStr == "allpass")
+        params.type = Sphere::EQFilterType::AllPass;
+
+      synthAudioSource.setEQBandParameters(bandIndex, params);
+    } else if (parts[1] == "phasemode") {
+      // Format: eq/phasemode/mode
+      String mode = parts[2];
+      if (mode == "minimum") {
+        synthAudioSource.setEQPhaseMode(Sphere::EQPhaseMode::MinimumPhase);
+      } else if (mode == "natural") {
+        synthAudioSource.setEQPhaseMode(Sphere::EQPhaseMode::NaturalPhase);
+      } else if (mode == "linear") {
+        synthAudioSource.setEQPhaseMode(Sphere::EQPhaseMode::LinearPhase);
+      }
+    } else if (parts[1] == "oversampling") {
+      // Format: eq/oversampling/factor
+      int factor = parts[2].getIntValue();
+      if (factor == 0 || factor == 1) {
+        synthAudioSource.setEQOversampleFactor(
+            Sphere::SphereEQOversampler::Factor::None);
+      } else if (factor == 2) {
+        synthAudioSource.setEQOversampleFactor(
+            Sphere::SphereEQOversampler::Factor::X2);
+      } else if (factor == 4) {
+        synthAudioSource.setEQOversampleFactor(
+            Sphere::SphereEQOversampler::Factor::X4);
+      }
+    } else if (parts[1] == "firlength") {
+      // Format: eq/firlength/length
+      String length = parts[2];
+      if (length == "short") {
+        synthAudioSource.setEQLinearPhaseLength(
+            Sphere::LinearPhaseLength::Short);
+      } else if (length == "medium") {
+        synthAudioSource.setEQLinearPhaseLength(
+            Sphere::LinearPhaseLength::Medium);
+      } else if (length == "long") {
+        synthAudioSource.setEQLinearPhaseLength(
+            Sphere::LinearPhaseLength::Long);
+      }
+    } else if (parts[1] == "dynamic") {
+      // Format: eq/dynamic/bandIndex/mode/thresh/ratio/attack/release/knee
+      int bandIndex = parts[2].getIntValue();
+      String modeStr = parts[3];
+      double thresh = parts[4].getDoubleValue();
+      double ratio = parts[5].getDoubleValue();
+      double attack = parts[6].getDoubleValue();
+      double release = parts[7].getDoubleValue();
+      double knee = parts[8].getDoubleValue();
+
+      // Get current band params and update dynamic section
+      auto params = synthAudioSource.getEQBandParameters(bandIndex);
+
+      // Parse dynamic mode
+      if (modeStr == "off") {
+        params.dynamicMode = Sphere::EQDynamicMode::Off;
+      } else if (modeStr == "compress") {
+        params.dynamicMode = Sphere::EQDynamicMode::Compress;
+      } else if (modeStr == "expand") {
+        params.dynamicMode = Sphere::EQDynamicMode::Expand;
+      } else if (modeStr == "gate") {
+        params.dynamicMode = Sphere::EQDynamicMode::Gate;
+      }
+
+      params.dynamicThreshold = thresh;
+      params.dynamicRatio = ratio;
+      params.dynamicAttack = attack;
+      params.dynamicRelease = release;
+      params.dynamicKnee = knee;
+
+      synthAudioSource.setEQBandParameters(bandIndex, params);
+    } else if (parts[1] == "character") {
+      // Format: eq/character/mode
+      int modeIdx = parts[2].getIntValue();
+      Sphere::EQCharacterMode mode = Sphere::EQCharacterMode::Clean;
+      if (modeIdx == 1)
+        mode = Sphere::EQCharacterMode::Subtle;
+      else if (modeIdx == 2)
+        mode = Sphere::EQCharacterMode::Warm;
+
+      synthAudioSource.setEQCharacterMode(mode);
     }
   }
 }

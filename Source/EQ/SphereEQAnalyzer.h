@@ -11,35 +11,37 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <vector>
 
-namespace Sphere
-{
-    // Stub implementation as juce_dsp (and FFT) is missing
-    class SphereEQAnalyzer
-    {
-    public:
-        SphereEQAnalyzer();
-        ~SphereEQAnalyzer() = default;
+namespace Sphere {
+// Stub implementation as juce_dsp (and FFT) is missing
+class SphereEQAnalyzer {
+public:
+  SphereEQAnalyzer() { magnitudes.resize(fftSize / 2, -100.0f); }
 
-        void prepare(double sampleRate);
-        
-        void pushBuffer(const juce::AudioBuffer<float>& buffer);
+  ~SphereEQAnalyzer() = default;
 
-        void pushSample(float sample);
+  void prepare(double newSampleRate) { sampleRate = newSampleRate; }
 
-        bool getPath(juce::Path& p, juce::Rectangle<float> bounds);
-        
-        const std::vector<float>& getMagnitudes() const { return magnitudes; }
+  void pushBuffer(const juce::AudioBuffer<float> &buffer) {
+    juce::ignoreUnused(buffer);
+  }
 
-        enum
-        {
-            fftOrder = 11,
-            fftSize  = 1 << fftOrder
-        };
+  void pushSample(float sample) { juce::ignoreUnused(sample); }
 
-    private:
-        double sampleRate = 44100.0;
-        std::vector<float> magnitudes;
-    };
+  bool getPath(juce::Path &p, juce::Rectangle<float> bounds) {
+    juce::ignoreUnused(bounds);
+    p.clear();
+    return false;
+  }
+
+  const std::vector<float> &getMagnitudes() const { return magnitudes; }
+
+  enum { fftOrder = 11, fftSize = 1 << fftOrder };
+
+private:
+  double sampleRate = 44100.0;
+  std::vector<float> magnitudes;
+};
 
 } // namespace Sphere

@@ -398,3 +398,9 @@ REGISTER_FX_MODULE(EQModule, ModuleType::EQ, "Parametric EQ")
 } // namespace FX
 } // namespace Sphere
 
+
+
+
+
+
+

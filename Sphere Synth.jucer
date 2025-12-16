@@ -10,6 +10,32 @@
       <FILE id="jY3jlb" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="WEmDLL" name="SphereSynth.h" compile="0" resource="0"
             file="Source/SphereSynth.h"/>
+      <GROUP id="EQ" name="EQ">
+        <FILE id="EQAnaCpp" name="SphereEQAnalyzer.cpp" compile="1" resource="0" file="Source/EQ/SphereEQAnalyzer.cpp"/>
+        <FILE id="EQAnaH" name="SphereEQAnalyzer.h" compile="0" resource="0" file="Source/EQ/SphereEQAnalyzer.h"/>
+        <FILE id="EQBandCpp" name="SphereEQBand.cpp" compile="1" resource="0" file="Source/EQ/SphereEQBand.cpp"/>
+        <FILE id="EQBandH" name="SphereEQBand.h" compile="0" resource="0" file="Source/EQ/SphereEQBand.h"/>
+        <FILE id="EQBandProc" name="SphereEQBandProcessor.h" compile="0" resource="0" file="Source/EQ/SphereEQBandProcessor.h"/>
+        <FILE id="EQBiquad" name="SphereEQBiquad.h" compile="0" resource="0" file="Source/EQ/SphereEQBiquad.h"/>
+        <FILE id="EQCook" name="SphereEQCookbook.h" compile="0" resource="0" file="Source/EQ/SphereEQCookbook.h"/>
+        <FILE id="EQDyn" name="SphereEQDynamic.h" compile="0" resource="0" file="Source/EQ/SphereEQDynamic.h"/>
+        <FILE id="EQDynSecCpp" name="SphereEQDynamicSection.cpp" compile="1" resource="0" file="Source/EQ/SphereEQDynamicSection.cpp"/>
+        <FILE id="EQDynSecH" name="SphereEQDynamicSection.h" compile="0" resource="0" file="Source/EQ/SphereEQDynamicSection.h"/>
+        <FILE id="EQEngCpp" name="SphereEQEngine.cpp" compile="1" resource="0" file="Source/EQ/SphereEQEngine.cpp"/>
+        <FILE id="EQEngH" name="SphereEQEngine.h" compile="0" resource="0" file="Source/EQ/SphereEQEngine.h"/>
+        <FILE id="EQEngV2" name="SphereEQEngineV2.h" compile="0" resource="0" file="Source/EQ/SphereEQEngineV2.h"/>
+        <FILE id="EQLin" name="SphereEQLinearPhase.h" compile="0" resource="0" file="Source/EQ/SphereEQLinearPhase.h"/>
+        <FILE id="EQOverCpp" name="SphereEQOversampler.cpp" compile="1" resource="0" file="Source/EQ/SphereEQOversampler.cpp"/>
+        <FILE id="EQOverH" name="SphereEQOversampler.h" compile="0" resource="0" file="Source/EQ/SphereEQOversampler.h"/>
+        <FILE id="EQTypes" name="SphereEQTypes.h" compile="0" resource="0" file="Source/EQ/SphereEQTypes.h"/>
+        <FILE id="EQSpec" name="SphereSpectralDynamics.h" compile="0" resource="0" file="Source/EQ/SphereSpectralDynamics.h"/>
+      </GROUP>
+      <GROUP id="FX" name="FX">
+        <GROUP id="Compressor" name="Compressor">
+          <FILE id="CompH" name="SphereCompressor.h" compile="0" resource="0" file="Source/FX/Compressor/SphereCompressor.h"/>
+          <FILE id="CompMod" name="SphereCompressorModule.h" compile="0" resource="0" file="Source/FX/Compressor/SphereCompressorModule.h"/>
+        </GROUP>
+      </GROUP>
     </GROUP>
     <GROUP id="H5KeLN" name="Assets">
       <FILE id="vrEjFL" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>
