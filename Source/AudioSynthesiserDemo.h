@@ -93,7 +93,11 @@ public:
   // Custom WebBrowserComponent to intercept URL calls
   class SphereSynthBrowser : public WebBrowserComponent {
   public:
-    SphereSynthBrowser(AudioSynthesiserDemo &owner) : owner(owner) {}
+    SphereSynthBrowser(AudioSynthesiserDemo &owner)
+        : WebBrowserComponent(
+              WebBrowserComponent::Options()
+                  .withBackend(WebBrowserComponent::Options::Backend::webview2)),
+          owner(owner) {}
 
     bool pageAboutToLoad(const String &newURL) override;
 
@@ -107,9 +111,20 @@ public:
     // HTML Content from resources
     String htmlContent = SphereSynthResources::html;
 
-    File tempFile = File::getSpecialLocation(File::tempDirectory)
-                        .getChildFile("sphere_synth.html");
+    File tempDir = File::getSpecialLocation(File::tempDirectory);
+    File tempFile = tempDir.getChildFile("sphere_synth.html");
     tempFile.replaceWithText(htmlContent);
+    
+    // Copy video file to temp directory if it exists
+    File exeFile = File::getSpecialLocation(File::currentExecutableFile);
+    File videoSrc = exeFile.getParentDirectory().getChildFile("colorful-galaxy.1920x1080.mp4");
+    if (videoSrc.existsAsFile()) {
+      File videoDst = tempDir.getChildFile("colorful-galaxy.1920x1080.mp4");
+      if (!videoDst.existsAsFile()) {
+        videoSrc.copyFileTo(videoDst);
+      }
+    }
+    
     webView.goToURL(URL(tempFile).toString(false));
 
     audioSourcePlayer.setSource(&synthAudioSource);
@@ -143,6 +158,11 @@ public:
     // Boost the level slightly for better visual response
     level = std::min(1.0f, level * 6.0f);
     webView.evaluateJavascript("updateMeter(" + String(level) + ")");
+    
+    // Update compressor gain reduction meter and waveform
+    float gr = synthAudioSource.getCompressorGainReduction();
+    webView.evaluateJavascript("updateCompMeter(" + String(gr) + ")");
+    webView.evaluateJavascript("pushWaveformLevel(" + String(synthAudioSource.currentRMS.load()) + ")");
   }
 
   void resized() override { webView.setBounds(getLocalBounds()); }
@@ -250,6 +270,25 @@ inline void AudioSynthesiserDemo::handleSphereCommand(const String &url) {
             newId, &(synthAudioSource.midiCollector));
       }
       sendDevicesToUI();
+    }
+  } else if (parts[0] == "comp") {
+    // Compressor commands: comp/enable/1, comp/threshold/-20, etc.
+    if (parts[1] == "enable") {
+      synthAudioSource.setCompressorEnabled(parts[2].getIntValue() != 0);
+    } else if (parts[1] == "delta") {
+      synthAudioSource.setCompressorDelta(parts[2].getIntValue() != 0);
+    } else if (parts[1] == "threshold") {
+      synthAudioSource.setCompressorThreshold(parts[2].getFloatValue());
+    } else if (parts[1] == "ratio") {
+      synthAudioSource.setCompressorRatio(parts[2].getFloatValue());
+    } else if (parts[1] == "attack") {
+      synthAudioSource.setCompressorAttack(parts[2].getFloatValue());
+    } else if (parts[1] == "release") {
+      synthAudioSource.setCompressorRelease(parts[2].getFloatValue());
+    } else if (parts[1] == "makeup") {
+      synthAudioSource.setCompressorMakeup(parts[2].getFloatValue());
+    } else if (parts[1] == "knee") {
+      synthAudioSource.setCompressorKnee(parts[2].getFloatValue());
     }
   }
 }
