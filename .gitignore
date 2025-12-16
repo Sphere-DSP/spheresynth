@@ -1,0 +1,16 @@
+# JUCE
+Builds/*/build/
+Builds/*/Build/
+Builds/*/DerivedData/
+Builds/*/Intermediate/
+Builds/*/*.xcodeproj/xcuserdata/
+*.jucer.user
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.xcworkspace/
+xcuserdata/

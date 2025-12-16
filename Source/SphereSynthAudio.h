@@ -10,8 +10,6 @@
 #include "EQ/SphereEQCookbook.h"
 #include "EQ/SphereEQEngineV2.h"
 #include "EQ/SphereEQTypes.h"
-#include "FX/Compressor/SphereCompressor.h"
-#include "FX/ModuleManager/SphereFXChain.h"
 #include "FX/SphereFX.h"
 // #include <juce_dsp/juce_dsp.h> // Removed due to linker errors
 
@@ -293,17 +291,19 @@ struct SynthAudioSource final : public AudioSource {
         right[i] = r;
     }
 
-    // Apply Sphere EQ V2
-    eqEngine.processBlock(*bufferToFill.buffer, incomingMidi);
-
-    // Apply Compressor
-    juce::MidiBuffer emptyMidi;
-    compressor.processBlock(*bufferToFill.buffer, emptyMidi);
-    // Calculate RMS for visualization (avoid division, use approximation)
+    // Calculate stereo RMS for visualization
     if (bufferToFill.buffer->getNumChannels() > 0) {
-      currentRMS.store(
+      currentRMSLeft.store(
           bufferToFill.buffer->getRMSLevel(0, 0, bufferToFill.numSamples),
           std::memory_order_relaxed);
+      if (bufferToFill.buffer->getNumChannels() > 1) {
+        currentRMSRight.store(
+            bufferToFill.buffer->getRMSLevel(1, 0, bufferToFill.numSamples),
+            std::memory_order_relaxed);
+      } else {
+        currentRMSRight.store(currentRMSLeft.load(std::memory_order_relaxed),
+                              std::memory_order_relaxed);
+      }
     }
   }
 
@@ -393,45 +393,14 @@ struct SynthAudioSource final : public AudioSource {
   }
 
   // Public members that need external access
-  std::atomic<float> currentRMS{0.0f};
+  std::atomic<float> currentRMSLeft{0.0f};
+  std::atomic<float> currentRMSRight{0.0f};
   MidiMessageCollector midiCollector;
   MidiKeyboardState &keyboardState;
   Synthesiser synth;
   Sphere::SphereEQEngineV2 eqEngine;
-  Sphere::SphereCompressor compressor;
   std::unique_ptr<Sphere::FX::FXChain> fxChain;
   float outputGainLinear = 1.0f;
-
-  // ============================================================================
-  // Compressor Control Interface
-  // ============================================================================
-  void setCompressorEnabled(bool enabled) { compressor.setEnabled(enabled); }
-
-  void setCompressorDelta(bool enabled) {
-    compressor.setDeltaMonitoring(enabled);
-  }
-
-  void setCompressorThreshold(float thresholdDb) {
-    compressor.setThreshold(thresholdDb);
-  }
-
-  void setCompressorRatio(float ratio) { compressor.setRatio(ratio); }
-
-  void setCompressorAttack(float attackMs) { compressor.setAttack(attackMs); }
-
-  void setCompressorRelease(float releaseMs) {
-    compressor.setRelease(releaseMs);
-  }
-
-  void setCompressorMakeup(float makeupDb) {
-    compressor.setMakeupGain(makeupDb);
-  }
-
-  void setCompressorKnee(float kneeDb) { compressor.setKneeWidth(kneeDb); }
-
-  float getCompressorGainReduction() const {
-    return compressor.getGainReduction();
-  }
 
 private:
   // Cache WAV file data in memory at construction time to avoid disk I/O later

@@ -71,12 +71,18 @@ inline const juce::String css = R"CSS(
         box-shadow: 0 0 30px rgba(0, 229, 255, 0.8);
       }
       .volume-meter-container { position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
-        width: 6px; height: 300px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; z-index: 2000;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        display: flex; gap: 4px; height: 280px; z-index: 2000; padding: 6px 5px;
+        background: rgba(15, 12, 10, 0.85); border-radius: 8px;
+        border: 1px solid rgba(80, 60, 40, 0.4); box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        align-items: flex-end;
       }
-      .volume-meter-bar { width: 100%; height: 0%; background: linear-gradient(to top, #00e5ff, #00ff88);
-        position: absolute; bottom: 0; box-shadow: 0 0 15px #00e5ff; border-radius: 2px;
+      .volume-meter-bar { width: 6px; height: 0%; border-radius: 2px;
+        transition: height 0.08s ease-out, box-shadow 0.15s ease;
+        background: linear-gradient(to top, #2a5a3a 0%, #5a8a4a 30%, #a8a040 60%, #c07030 80%, #a03020 100%);
       }
+      .volume-meter-left, .volume-meter-right { opacity: 0.9; }
+      .volume-meter-bar.hot { box-shadow: 0 0 6px rgba(180, 60, 30, 0.6); }
+      .volume-meter-bar.warm { box-shadow: 0 0 4px rgba(120, 100, 50, 0.4); }
       .footer-credit { position: fixed; bottom: 10px; left: 10px; font-size: 10px;
         color: rgba(255, 255, 255, 0.4); letter-spacing: 2px; text-transform: uppercase; z-index: 1000;
         pointer-events: none;
@@ -519,6 +525,44 @@ inline const juce::String css = R"CSS(
       .eq-dropdown-item.active { background: rgba(0, 229, 255, 0.15); color: rgba(0, 229, 255, 1); }
       .eq-output-btn:hover { background: rgba(18, 18, 25, 0.6); border-color: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.55); }
       .eq-output-btn.active { background: rgba(0, 229, 255, 0.08); border-color: rgba(0, 229, 255, 0.2); color: rgba(0, 229, 255, 0.75); }
+      
+      /* Settings Modal Custom Dropdowns */
+      .settings-dropdown { position: relative; width: 100%; margin-bottom: 5px; }
+      .settings-dropdown-trigger {
+        width: 100%; background: rgba(30, 30, 30, 0.8); border: 1px solid rgba(0, 229, 255, 0.3);
+        color: white; padding: 10px; border-radius: 8px; font-size: 11px; cursor: pointer;
+        display: flex; justify-content: space-between; align-items: center; text-align: left;
+        transition: all 0.2s ease; text-transform: none; letter-spacing: 0.5px;
+      }
+      .settings-dropdown-trigger:hover { background: rgba(40, 40, 45, 0.9); border-color: rgba(0, 229, 255, 0.6); }
+      .settings-dropdown-trigger span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; }
+      .settings-dropdown-arrow { width: 10px; height: 10px; stroke: rgba(0, 229, 255, 0.8); stroke-width: 2; fill: none; transition: transform 0.2s; flex-shrink: 0; }
+      .settings-dropdown.open .settings-dropdown-arrow { transform: rotate(180deg); }
+      
+      .settings-dropdown-menu {
+        position: absolute; top: calc(100% + 5px); left: 0; width: 100%;
+        background: rgba(25, 25, 30, 0.98); backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px;
+        padding: 5px; z-index: 3500; max-height: 200px; overflow-y: auto;
+        display: none; flex-direction: column; gap: 2px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+      .settings-dropdown.open .settings-dropdown-menu { display: flex; }
+      
+      .settings-dropdown-item {
+        padding: 8px 12px; background: transparent; border: none; border-radius: 6px;
+        color: rgba(255, 255, 255, 0.7); font-size: 11px; font-weight: 400;
+        cursor: pointer; transition: all 0.15s ease; text-align: left; width: 100%;
+        display: flex; align-items: center; justify-content: space-between;
+        text-transform: none; letter-spacing: 0.3px;
+      }
+      .settings-dropdown-item:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+      .settings-dropdown-item.active { background: rgba(0, 229, 255, 0.15); color: #00e5ff; }
+      .settings-dropdown-item.active::after {
+        content: ''; width: 6px; height: 6px; border-radius: 50%; background: #00e5ff;
+        box-shadow: 0 0 8px #00e5ff;
+      }
+
     )CSS";
 
 inline const juce::String js = R"JS(
@@ -671,14 +715,21 @@ inline const juce::String js = R"JS(
             if(btn) btn.classList.add('active');
             window.location = 'sphere://sound/' + type;
         }
-        function updateMeter(level) {
-            // Only update main volume bar if it exists (it's handled by JUCE usually but we might have a JS visual)
-            // The horizontal meter is removed.
-            const bar = document.getElementById('volume-bar');
-            if (bar) {
-                const percentage = Math.min(100, Math.max(0, level * 100));
-                bar.style.height = percentage + '%';
-                bar.style.opacity = 0.5 + (level * 0.5);
+        function updateMeter(leftLevel, rightLevel) {
+            const leftBar = document.getElementById('volume-bar-left');
+            const rightBar = document.getElementById('volume-bar-right');
+            
+            if (leftBar) {
+                const leftPct = Math.min(100, Math.max(0, leftLevel * 100));
+                leftBar.style.height = leftPct + '%';
+                leftBar.classList.toggle('hot', leftLevel > 0.85);
+                leftBar.classList.toggle('warm', leftLevel > 0.3 && leftLevel <= 0.85);
+            }
+            if (rightBar) {
+                const rightPct = Math.min(100, Math.max(0, rightLevel * 100));
+                rightBar.style.height = rightPct + '%';
+                rightBar.classList.toggle('hot', rightLevel > 0.85);
+                rightBar.classList.toggle('warm', rightLevel > 0.3 && rightLevel <= 0.85);
             }
         }
 
@@ -743,28 +794,117 @@ inline const juce::String js = R"JS(
         function populateDevices(jsonString) {
             try {
                 const data = JSON.parse(jsonString);
-                const audioSelect = document.getElementById('audio-output');
-                if (audioSelect) {
-                    audioSelect.innerHTML = '';
+                
+                // Populate Audio Outputs
+                const audioMenu = document.getElementById('audio-output-menu');
+                const audioLabel = document.getElementById('audio-output-label');
+                if (audioMenu && audioLabel) {
+                    audioMenu.innerHTML = '';
                     data.audioOutputs.forEach((name, index) => {
-                        const option = document.createElement('option');
-                        option.text = name; option.value = index;
-                        if (index === data.currentAudioOutput) option.selected = true;
-                        audioSelect.add(option);
+                        const btn = document.createElement('button');
+                        btn.className = 'settings-dropdown-item' + (index === data.currentAudioOutput ? ' active' : '');
+                        btn.textContent = name;
+                        btn.onclick = () => selectAudioOutput(index, name);
+                        audioMenu.appendChild(btn);
+                        
+                        if (index === data.currentAudioOutput) {
+                            audioLabel.textContent = name;
+                        }
                     });
                 }
-                const midiSelect = document.getElementById('midi-input');
-                if (midiSelect) {
-                    midiSelect.innerHTML = '';
-                    data.midiInputs.forEach((name, index) => {
-                        const option = document.createElement('option');
-                        option.text = name; option.value = index;
-                        if (index === data.currentMidiInput) option.selected = true;
-                        midiSelect.add(option);
-                    });
+                
+                // Populate MIDI Inputs
+                const midiMenu = document.getElementById('midi-input-menu');
+                const midiLabel = document.getElementById('midi-input-label');
+                if (midiMenu && midiLabel) {
+                    midiMenu.innerHTML = '';
+                    
+                    if (data.midiInputs.length === 0) {
+                        midiLabel.textContent = "No MIDI Input Found";
+                        // Optional: Disable dropdown if needed, but for now just showing text is enough
+                    } else {
+                        let selectedIndex = data.currentMidiInput;
+                        
+                        // Auto-select first input if none selected
+                        if (selectedIndex === -1 && data.midiInputs.length > 0) {
+                            selectedIndex = 0;
+                            // Notify backend of auto-selection
+                            selectMidiInput(0, data.midiInputs[0]);
+                        }
+
+                        data.midiInputs.forEach((name, index) => {
+                            const btn = document.createElement('button');
+                            btn.className = 'settings-dropdown-item' + (index === selectedIndex ? ' active' : '');
+                            btn.textContent = name;
+                            btn.onclick = () => selectMidiInput(index, name);
+                            midiMenu.appendChild(btn);
+                            
+                            if (index === selectedIndex) {
+                                midiLabel.textContent = name;
+                            }
+                        });
+                    }
                 }
             } catch(e) { console.error("Error parsing device data", e); }
         }
+        
+        // Settings Dropdown Logic
+        function toggleAudioOutputDropdown() {
+            const dropdown = document.getElementById('audio-output-dropdown');
+            const midiDropdown = document.getElementById('midi-input-dropdown');
+            if (midiDropdown) midiDropdown.classList.remove('open');
+            if (dropdown) dropdown.classList.toggle('open');
+        }
+        
+        function toggleMidiInputDropdown() {
+            const dropdown = document.getElementById('midi-input-dropdown');
+            const audioDropdown = document.getElementById('audio-output-dropdown');
+            if (audioDropdown) audioDropdown.classList.remove('open');
+            if (dropdown) dropdown.classList.toggle('open');
+        }
+        
+        function selectAudioOutput(index, name) {
+            const label = document.getElementById('audio-output-label');
+            if (label) label.textContent = name;
+            
+            // Update active state
+            document.querySelectorAll('#audio-output-menu .settings-dropdown-item').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            
+            const dropdown = document.getElementById('audio-output-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
+            
+            window.location = 'sphere://setAudioOutput/' + index;
+        }
+        
+        function selectMidiInput(index, name) {
+            const label = document.getElementById('midi-input-label');
+            if (label) label.textContent = name;
+            
+            // Update active state
+            document.querySelectorAll('#midi-input-menu .settings-dropdown-item').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            
+            const dropdown = document.getElementById('midi-input-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
+            
+            window.location = 'sphere://setMidiInput/' + index;
+        }
+        
+        // Close settings dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            const audioDropdown = document.getElementById('audio-output-dropdown');
+            const midiDropdown = document.getElementById('midi-input-dropdown');
+            
+            if (audioDropdown && !audioDropdown.contains(e.target)) {
+                audioDropdown.classList.remove('open');
+            }
+            if (midiDropdown && !midiDropdown.contains(e.target)) {
+                midiDropdown.classList.remove('open');
+            }
+        });
         function noteOn(note) {
             if (currentNotes.has(note)) return;
             activeNotes++; currentNotes.set(note, Date.now()); updateVibrationSpeed();
@@ -2524,14 +2664,35 @@ inline const juce::String html =
           </div>
         </div>
       </div>
-      <div class="volume-meter-container"><div class="volume-meter-bar" id="volume-bar"></div></div>
+      <div class="volume-meter-container">
+        <div class="volume-meter-bar volume-meter-left" id="volume-bar-left"></div>
+        <div class="volume-meter-bar volume-meter-right" id="volume-bar-right"></div>
+      </div>
       <div id="popup-sphere" class="tutorial-popup"><div class="popup-title">Sphere Visualizer</div><div class="popup-text">This sphere reacts to your notes.</div><button class="popup-dismiss" onclick="dismissPopup('popup-sphere')">Next</button></div>
       <div id="popup-controls" class="tutorial-popup"><div class="popup-title">Sound Selection</div><div class="popup-text">Choose different waveforms.</div><button class="popup-dismiss" onclick="dismissPopup('popup-controls')">Next</button></div>
       <div id="popup-keyboard" class="tutorial-popup"><div class="popup-title">Piano Keyboard</div><div class="popup-text">Use A-J keys to play C3-B3, K-; for C4-E4. Press Z/X to shift octave down/up.</div><button class="popup-dismiss" onclick="dismissPopup('popup-keyboard')">Got It!</button></div>
       <div id="settings-modal" class="tutorial-popup" style="max-width: 400px; top: 50%; left: 50%; transform: translate(-50%, -50%);">
         <div class="popup-title">Settings</div>
-        <div style="margin-bottom: 15px;"><label style="display: block; color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 5px; text-transform: uppercase;">Audio Output</label><select id="audio-output" onchange="setAudioOutput(this.value)" class="settings-select"><option>Loading...</option></select></div>
-        <div style="margin-bottom: 20px;"><label style="display: block; color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 5px; text-transform: uppercase;">MIDI Input</label><select id="midi-input" onchange="setMidiInput(this.value)" class="settings-select"><option>Loading...</option></select></div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; color: rgba(255,255,255,0.6); font-size: 10px; margin-bottom: 5px; letter-spacing: 0.5px;">Audio Output</label>
+          <div class="settings-dropdown" id="audio-output-dropdown">
+            <button class="settings-dropdown-trigger" onclick="toggleAudioOutputDropdown()">
+              <span id="audio-output-label">Loading...</span>
+              <svg class="settings-dropdown-arrow" viewBox="0 0 12 12"><path d="M3 4.5 L6 7.5 L9 4.5"/></svg>
+            </button>
+            <div class="settings-dropdown-menu" id="audio-output-menu"></div>
+          </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; color: rgba(255,255,255,0.6); font-size: 10px; margin-bottom: 5px; letter-spacing: 0.5px;">MIDI Input</label>
+          <div class="settings-dropdown" id="midi-input-dropdown">
+            <button class="settings-dropdown-trigger" onclick="toggleMidiInputDropdown()">
+              <span id="midi-input-label">Loading...</span>
+              <svg class="settings-dropdown-arrow" viewBox="0 0 12 12"><path d="M3 4.5 L6 7.5 L9 4.5"/></svg>
+            </button>
+            <div class="settings-dropdown-menu" id="midi-input-menu"></div>
+          </div>
+        </div>
         <button class="popup-dismiss" onclick="toggleSettings()">Close</button>
       </div>
     </body><script>)HTML" +

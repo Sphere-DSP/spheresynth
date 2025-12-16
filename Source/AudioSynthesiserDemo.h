@@ -161,10 +161,12 @@ public:
   }
 
   void timerCallback() override {
-    float level = synthAudioSource.currentRMS;
-    // Boost the level slightly for better visual response
-    level = std::min(1.0f, level * 6.0f);
-    webView.evaluateJavascript("updateMeter(" + String(level) + ")");
+    float levelL =
+        std::min(1.0f, synthAudioSource.currentRMSLeft.load() * 6.0f);
+    float levelR =
+        std::min(1.0f, synthAudioSource.currentRMSRight.load() * 6.0f);
+    webView.evaluateJavascript("updateMeter(" + String(levelL) + ", " +
+                               String(levelR) + ")");
 
     // Send Spectrum Data
     // We send data as a JSON object: { "input": [...], "output": [...] }
@@ -196,12 +198,6 @@ public:
 
     webView.evaluateJavascript("updateSpectrum(" + inputJson + ", " +
                                outputJson + ")");
-    // Update compressor gain reduction meter and waveform
-    float gr = synthAudioSource.getCompressorGainReduction();
-    webView.evaluateJavascript("updateCompMeter(" + String(gr) + ")");
-    webView.evaluateJavascript("pushWaveformLevel(" +
-                               String(synthAudioSource.currentRMS.load()) +
-                               ")");
   }
 
   void resized() override { webView.setBounds(getLocalBounds()); }
@@ -428,24 +424,6 @@ inline void AudioSynthesiserDemo::handleSphereCommand(const String &url) {
         mode = Sphere::EQCharacterMode::Warm;
 
       synthAudioSource.setEQCharacterMode(mode);
-    }
-  } else if (parts[0] == "comp") {
-    if (parts[1] == "enable") {
-      synthAudioSource.setCompressorEnabled(parts[2].getIntValue() != 0);
-    } else if (parts[1] == "delta") {
-      synthAudioSource.setCompressorDelta(parts[2].getIntValue() != 0);
-    } else if (parts[1] == "threshold") {
-      synthAudioSource.setCompressorThreshold(parts[2].getFloatValue());
-    } else if (parts[1] == "ratio") {
-      synthAudioSource.setCompressorRatio(parts[2].getFloatValue());
-    } else if (parts[1] == "attack") {
-      synthAudioSource.setCompressorAttack(parts[2].getFloatValue());
-    } else if (parts[1] == "release") {
-      synthAudioSource.setCompressorRelease(parts[2].getFloatValue());
-    } else if (parts[1] == "makeup") {
-      synthAudioSource.setCompressorMakeup(parts[2].getFloatValue());
-    } else if (parts[1] == "knee") {
-      synthAudioSource.setCompressorKnee(parts[2].getFloatValue());
     }
   }
 }
